@@ -31,7 +31,7 @@ const Users: React.FC = () => {
             dispatch({ type: 'UPDATE_USER', payload: user });
         } else {
             // This is a simplified add user, a real one would need more fields
-            const newUser = { ...user, id: Date.now(), walletBalance: 0, activePlan: 'None', registrationDate: new Date().toISOString().split('T')[0], status: Status.Active };
+            const newUser = { ...user, id: Date.now(), walletBalance: 0, heldBalance: 0, activePlans: [], registrationDate: new Date().toISOString().split('T')[0], status: Status.Active };
             dispatch({ type: 'ADD_USER', payload: newUser });
         }
         handleCloseModal();
@@ -53,7 +53,7 @@ const Users: React.FC = () => {
         );
     }), [users, searchTerm]);
 
-    const tableHeaders = ['User', 'Contact', 'Wallet Balance', 'Active Plan', 'Status', 'Actions'];
+    const tableHeaders = ['User', 'Contact', 'Wallet Balance', 'Active Plan(s)', 'Status', 'Actions'];
 
     return (
         <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md">
@@ -86,7 +86,7 @@ const Users: React.FC = () => {
                             <span className="text-xs text-gray-600 dark:text-gray-400">{user.phone}</span>
                         </td>
                         <td className="px-4 py-3 text-sm">${user.walletBalance.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-sm">{user.activePlan}</td>
+                        <td className="px-4 py-3 text-sm">{user.activePlans.join(', ') || 'None'}</td>
                         <td className="px-4 py-3 text-xs">
                            <Badge status={user.status} />
                         </td>
@@ -255,8 +255,9 @@ const UserDetailsModal: React.FC<{ user: User; onClose: () => void; onSwitchToEd
                         </div>
                          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
                             <h3 className="font-semibold mb-2">Wallet & Plan</h3>
-                            <p className="text-sm"><strong>Balance:</strong> <span className="font-bold text-green-600">${user.walletBalance.toFixed(2)}</span></p>
-                            <p className="text-sm"><strong>Current Plan:</strong> {user.activePlan}</p>
+                            <p className="text-sm"><strong>Available Balance:</strong> <span className="font-bold text-green-600">${user.walletBalance.toFixed(2)}</span></p>
+                            <p className="text-sm"><strong>Held for Upgrade:</strong> <span className="font-bold text-yellow-600">${user.heldBalance.toFixed(2)}</span></p>
+                            <p className="text-sm"><strong>Current Plan(s):</strong> {user.activePlans.join(', ') || 'None'}</p>
                             <p className="text-sm"><strong>Status:</strong> <Badge status={user.status} /></p>
                         </div>
                     </div>

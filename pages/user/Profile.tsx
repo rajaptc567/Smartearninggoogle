@@ -9,6 +9,10 @@ const Profile: React.FC = () => {
     
     const [formData, setFormData] = useState<Partial<User>>(currentUser || {});
     const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
+    const [infoMessage, setInfoMessage] = useState('');
+    const [passwordMessage, setPasswordMessage] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+
 
     if (!currentUser) {
         return <div>Loading...</div>;
@@ -24,23 +28,31 @@ const Profile: React.FC = () => {
 
     const handleInfoSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setInfoMessage('');
         dispatch({ type: 'UPDATE_USER', payload: { ...currentUser, ...formData } as User });
-        alert('Profile information updated successfully!');
+        setInfoMessage('Profile information updated successfully!');
+        setTimeout(() => setInfoMessage(''), 3000);
     };
 
     const handlePasswordSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setPasswordMessage('');
+        setPasswordError('');
+
         if (passwords.new !== passwords.confirm) {
-            alert("New passwords do not match.");
+            setPasswordError("New passwords do not match.");
+            setTimeout(() => setPasswordError(''), 3000);
             return;
         }
         if (passwords.new.length < 6) {
-            alert("New password must be at least 6 characters long.");
+            setPasswordError("New password must be at least 6 characters long.");
+            setTimeout(() => setPasswordError(''), 3000);
             return;
         }
         // In a real app, you would verify the current password here
-        alert('Password changed successfully! (Simulation)');
+        setPasswordMessage('Password changed successfully! (Simulation)');
         setPasswords({ current: '', new: '', confirm: '' });
+        setTimeout(() => setPasswordMessage(''), 3000);
     };
 
     return (
@@ -74,7 +86,8 @@ const Profile: React.FC = () => {
                             <input type="text" value={formData.whatsapp || ''} onChange={handleChange} name="whatsapp" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
                         </div>
                     </div>
-                    <div className="text-right pt-2">
+                    <div className="text-right pt-2 flex items-center justify-end">
+                        {infoMessage && <span className="text-green-500 text-sm mr-4 transition-opacity duration-300">{infoMessage}</span>}
                         <Button type="submit">Save Information</Button>
                     </div>
                 </form>
@@ -95,7 +108,9 @@ const Profile: React.FC = () => {
                         <label className="block text-sm font-medium">Confirm New Password</label>
                         <input type="password" name="confirm" value={passwords.confirm} onChange={handlePasswordChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
                     </div>
-                    <div className="text-right pt-2">
+                    <div className="text-right pt-2 flex items-center justify-end">
+                        {passwordMessage && <span className="text-green-500 text-sm mr-4 transition-opacity duration-300">{passwordMessage}</span>}
+                        {passwordError && <span className="text-red-500 text-sm mr-4 transition-opacity duration-300">{passwordError}</span>}
                         <Button type="submit">Update Password</Button>
                     </div>
                 </form>

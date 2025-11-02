@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Status, Transaction, User, Deposit } from '../types';
+import { Status, Transaction, User, Deposit, InvestmentPlan } from '../types';
 import Table from '../components/ui/Table';
 import Button from '../components/ui/Button';
 import { useData } from '../hooks/useData';
@@ -84,6 +84,10 @@ const UserDashboard: React.FC = () => {
         const directCommission = approvedCommissions.filter(t => t.level === 1).reduce((sum, t) => sum + t.amount, 0);
         const indirectCommission = totalCommission - directCommission;
 
+        const highestPlanValue = investmentPlans
+            .filter(p => currentUser.activePlans.includes(p.name))
+            .reduce((max, p) => Math.max(max, p.price), 0);
+
         return {
             totalDeposits: deposits.filter(d => d.userId === currentUser.id && d.status === Status.Approved).reduce((sum, d) => sum + d.amount, 0),
             totalWithdrawals: withdrawals.filter(w => w.userId === currentUser.id && w.status === Status.Paid).reduce((sum, w) => sum + w.finalAmount, 0),
@@ -92,9 +96,9 @@ const UserDashboard: React.FC = () => {
             indirectCommission,
             pendingCommission: userTransactions.filter(t => t.type === 'Commission' && t.status === 'Pending').reduce((sum, t) => sum + t.amount, 0),
             monthlyEarnings: approvedCommissions.filter(t => t.date >= firstDayOfMonth).reduce((sum, t) => sum + t.amount, 0),
-            activePlanValue: investmentPlans.find(p => p.name === currentUser.activePlan)?.price || 0,
+            activePlanValue: highestPlanValue,
         };
-    }, [userTransactions, deposits, withdrawals, investmentPlans, currentUser.id, currentUser.activePlan]);
+    }, [userTransactions, deposits, withdrawals, investmentPlans, currentUser.id, currentUser.activePlans]);
     
     const countAllReferrals = useCallback((username: string, allUsers: User[]): number => {
         const directReferrals = allUsers.filter(u => u.sponsor === username);
@@ -150,9 +154,9 @@ const UserDashboard: React.FC = () => {
                     {visibleWidgets.withdrawals && <StatCard title="Total Withdrawals" value={`$${stats.totalWithdrawals.toFixed(2)}`} icon={<WithdrawalIcon />} color="bg-red-500" />}
                     {visibleWidgets.pending && <StatCard title="Pending Commission" value={`$${stats.pendingCommission.toFixed(2)}`} icon={<ClockIcon />} color="bg-yellow-500" />}
                     {visibleWidgets.referrals && <StatCard title="Total Referrals" value={totalReferrals} icon={<UsersIcon />} color="bg-purple-500" />}
-                    {visibleWidgets.plan && <StatCard title="Active Plan" value={currentUser.activePlan} icon={<PlanIcon />} color="bg-indigo-500" />}
+                    {visibleWidgets.plan && <StatCard title="Active Plan(s)" value={currentUser.activePlans.join(', ') || 'None'} icon={<PlanIcon />} color="bg-indigo-500" />}
                     {visibleWidgets.monthly && <StatCard title="Earnings This Month" value={`$${stats.monthlyEarnings.toFixed(2)}`} icon={<EarningsIcon />} color="bg-teal-500" />}
-                    {visibleWidgets.plan && <StatCard title="Active Plan Value" value={`$${stats.activePlanValue.toFixed(2)}`} icon={<PlanIcon />} color="bg-pink-500" />}
+                    {visibleWidgets.plan && <StatCard title="Highest Plan Value" value={`$${stats.activePlanValue.toFixed(2)}`} icon={<PlanIcon />} color="bg-pink-500" />}
                 </div>
             </div>
 

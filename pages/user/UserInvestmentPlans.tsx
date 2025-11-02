@@ -35,6 +35,24 @@ const UserInvestmentPlans: React.FC = () => {
     setIsModalOpen(false);
     setSelectedPlan(null);
   }
+  
+  const getDirectCommissionDisplay = (plan: InvestmentPlan) => {
+    if (!plan.directCommissions || plan.directCommissions.length === 0) {
+      return 'N/A';
+    }
+
+    // Find the commission with the maximum value
+    const maxCommission = plan.directCommissions.reduce((max, current) =>
+      (current.value > max.value ? current : max), plan.directCommissions[0]
+    );
+
+    const displayValue = maxCommission.type === 'percentage' 
+      ? `${maxCommission.value}%` 
+      : `$${maxCommission.value}`;
+    
+    return `${displayValue} per ref`;
+  };
+
 
   return (
     <div className="space-y-6">
@@ -45,11 +63,11 @@ const UserInvestmentPlans: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {activePlans.map((plan) => {
-                const isCurrentPlan = currentUser.activePlan === plan.name;
+                const isCurrentPlan = currentUser.activePlans.includes(plan.name);
 
                 return (
-                     <div key={plan.id} className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col border-2 ${isCurrentPlan ? 'border-blue-500' : 'border-transparent'}`}>
-                        {isCurrentPlan && <div className="absolute top-0 right-0 -mt-3 -mr-3 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">Current Plan</div>}
+                     <div key={plan.id} className={`relative bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col border-2 ${isCurrentPlan ? 'border-blue-500' : 'border-transparent'}`}>
+                        {isCurrentPlan && <div className="absolute top-0 right-0 -mt-3 mr-3 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">Active</div>}
                         
                         <div className="flex justify-between items-start mb-4">
                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{plan.name}</h3>
@@ -58,12 +76,12 @@ const UserInvestmentPlans: React.FC = () => {
                         <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-4">${plan.price}</p>
                         
                         <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400 flex-grow">
-                            <li><CheckIcon /> <span className="font-semibold">Duration:</span> {plan.durationDays === 0 ? 'Unlimited' : `${plan.durationDays} Days`}</li>
+                            <li><CheckIcon /> <span className="font-semibold">Duration:</span> {plan.durationDays === 0 ? 'Lifetime' : `${plan.durationDays} Days`}</li>
                             <li><CheckIcon /> <span className="font-semibold">Min. Withdraw:</span> ${plan.minWithdraw}</li>
                             <li><CheckIcon /> <span className="font-semibold">Direct Referrals:</span> {plan.directReferralLimit === 0 ? 'Unlimited' : `Up to ${plan.directReferralLimit}`}</li>
                             <li><CheckIcon />
                                 <span className="font-semibold">Direct Commission: </span> 
-                                {plan.directCommission.type === 'percentage' ? `${plan.directCommission.value}%` : `$${plan.directCommission.value}`}
+                                {getDirectCommissionDisplay(plan)}
                             </li>
                              <li><CheckIcon />
                                 <span className="font-semibold">Indirect Levels: </span> 
@@ -78,7 +96,7 @@ const UserInvestmentPlans: React.FC = () => {
                                 onClick={() => handlePurchaseClick(plan)}
                                 disabled={isCurrentPlan}
                             >
-                                {isCurrentPlan ? 'Active Plan' : (plan.price > currentUser.walletBalance ? 'Upgrade (Deposit Required)' : 'Purchase Plan')}
+                                {isCurrentPlan ? 'Plan Active' : (plan.price > currentUser.walletBalance ? 'Deposit to Purchase' : 'Purchase Plan')}
                            </Button>
                         </div>
                     </div>

@@ -143,13 +143,22 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 const sponsor = state.users.find(u => u.username === currentSponsorUsername);
                 if (!sponsor) break;
 
-                const sponsorPlan = state.investmentPlans.find(p => p.name === sponsor.activePlan);
+                const sponsorActivePlans = state.investmentPlans.filter(p => sponsor.activePlans.includes(p.name));
+                const sponsorPlan = sponsorActivePlans.reduce((highest, p) => p.price > highest.price ? p : highest, sponsorActivePlans[0]);
+                
                 if (!sponsorPlan) break;
 
                 let commissionConfig: { value: number, type: 'fixed' | 'percentage' } | undefined;
 
                 if (level === 1) {
-                    commissionConfig = sponsorPlan.directCommission;
+                    const directReferralCount = state.users.filter(u => u.sponsor === sponsor.username).length;
+                    const slotIndex = directReferralCount -1;
+                    
+                    if (sponsorPlan.directReferralLimit > 0 && sponsorPlan.directCommissions.length > slotIndex) {
+                        commissionConfig = sponsorPlan.directCommissions[slotIndex];
+                    } else if (sponsorPlan.directReferralLimit === 0 && sponsorPlan.directCommissions.length > 0){
+                        commissionConfig = sponsorPlan.directCommissions[0]; // Use first value for unlimited
+                    }
                 } else if (sponsorPlan.indirectCommissions.length >= level - 1) {
                     commissionConfig = sponsorPlan.indirectCommissions[level - 2];
                 }
@@ -185,57 +194,76 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             return { ...state, deposits: [action.payload, ...state.deposits], transactions: newTransactions, notifications: newNotifications };
         }
         case 'UPDATE_DEPOSIT': {
+            let updatedState = { ...state };
             const updatedDeposit = action.payload;
-            const originalDeposit = state.deposits.find(d => d.id === updatedDeposit.id);
-            if (!originalDeposit || originalDeposit.status === updatedDeposit.status) return state;
+            const originalDeposit = updatedState.deposits.find(d => d.id === updatedDeposit.id);
+            if (!originalDeposit || originalDeposit.status === updatedDeposit.status) return updatedState;
             
-            let newNotifications = createNotification(
-                state.notifications,
+            updatedState.notifications = createNotification(
+                updatedState.notifications,
                 updatedDeposit.userId,
                 `Your deposit #${updatedDeposit.id} for $${updatedDeposit.amount.toFixed(2)} has been ${updatedDeposit.status}.`
             );
 
-            let newUsers = [...state.users];
-            let newTransactions = [...state.transactions];
-            let newWithdrawals = [...state.withdrawals];
-
             if (originalDeposit.status !== Status.Approved && updatedDeposit.status === Status.Approved) {
-                newUsers = newUsers.map(u => u.id === updatedDeposit.userId ? { ...u, walletBalance: u.walletBalance + updatedDeposit.amount } : u);
-                newTransactions.unshift({ id: `TRN${Date.now()}`, userId: updatedDeposit.userId, userName: updatedDeposit.userName, type: 'Deposit', amount: updatedDeposit.amount, date: new Date().toISOString().split('T')[0], description: `Approved Deposit #${updatedDeposit.id}`, status: 'Approved' });
+                updatedState.users = updatedState.users.map(u => u.id === updatedDeposit.userId ? { ...u, walletBalance: u.walletBalance + updatedDeposit.amount } : u);
+                updatedState.transactions.unshift({ id: `TRN${Date.now()}`, userId: updatedDeposit.userId, userName: updatedDeposit.userName, type: 'Deposit', amount: updatedDeposit.amount, date: new Date().toISOString().split('T')[0], description: `Approved Deposit #${updatedDeposit.id}`, status: 'Approved' });
             
                 if (updatedDeposit.matchedWithdrawalId) {
-                    const matchedWithdrawal = newWithdrawals.find(w => w.id === updatedDeposit.matchedWithdrawalId);
+                    const matchedWithdrawal = updatedState.withdrawals.find(w => w.id === updatedDeposit.matchedWithdrawalId);
                     if (matchedWithdrawal) {
                         const remaining = (matchedWithdrawal.matchRemainingAmount || 0) - updatedDeposit.amount;
                         matchedWithdrawal.matchRemainingAmount = Math.max(0, remaining);
                         if (matchedWithdrawal.matchRemainingAmount === 0) {
                             matchedWithdrawal.status = Status.Paid;
-                            newTransactions.unshift({ id: `TRN_P2P_${matchedWithdrawal.id}`, userId: matchedWithdrawal.userId, userName: matchedWithdrawal.userName, type: 'Withdrawal', amount: -matchedWithdrawal.amount, date: new Date().toISOString().split('T')[0], description: `P2P Withdrawal #${matchedWithdrawal.id} Paid`, status: 'Approved' });
-                             newNotifications = createNotification(newNotifications, matchedWithdrawal.userId, `Your P2P withdrawal #${matchedWithdrawal.id} has been fully paid.`);
+                            updatedState.transactions.unshift({ id: `TRN_P2P_${matchedWithdrawal.id}`, userId: matchedWithdrawal.userId, userName: matchedWithdrawal.userName, type: 'Withdrawal', amount: -matchedWithdrawal.amount, date: new Date().toISOString().split('T')[0], description: `P2P Withdrawal #${matchedWithdrawal.id} Paid`, status: 'Approved' });
+                            updatedState.notifications = createNotification(updatedState.notifications, matchedWithdrawal.userId, `Your P2P withdrawal #${matchedWithdrawal.id} has been fully paid.`);
                         }
                     }
                 } else {
-                    const pendingCommTxs = newTransactions.filter(t => t.description.includes(updatedDeposit.id) && t.status === 'Pending');
+                    const pendingCommTxs = updatedState.transactions.filter(t => t.description.includes(updatedDeposit.id) && t.status === 'Pending');
                     for (const commTx of pendingCommTxs) {
                         commTx.status = 'Approved';
-                        newUsers = newUsers.map(u => u.id === commTx.userId ? { ...u, walletBalance: u.walletBalance + commTx.amount } : u);
-                        newNotifications = createNotification(newNotifications, commTx.userId, `Your pending commission of $${commTx.amount.toFixed(2)} from ${updatedDeposit.userName} has been approved.`);
+                        const sponsor = updatedState.users.find(u => u.id === commTx.userId);
+                        const depositor = updatedState.users.find(u => u.id === updatedDeposit.userId);
+                        if (!sponsor || !depositor) continue;
+
+                        const sponsorActivePlans = state.investmentPlans.filter(p => sponsor.activePlans.includes(p.name));
+                        const sponsorPlan = sponsorActivePlans.reduce((highest, p) => p.price > highest.price ? p : highest, sponsorActivePlans[0]);
+                        
+                        const directReferralCount = state.users.filter(u => u.sponsor === sponsor.username).length;
+                        
+                        const isHeldPosition = sponsorPlan?.holdPosition.enabled && sponsorPlan.holdPosition.slots.includes(directReferralCount);
+
+                        if (isHeldPosition) {
+                            sponsor.heldBalance += commTx.amount;
+                            commTx.type = 'Held Commission';
+                            updatedState.notifications = createNotification(updatedState.notifications, commTx.userId, `A commission of $${commTx.amount.toFixed(2)} from ${updatedDeposit.userName} was added to your held balance for upgrade.`);
+                            
+                            // Check for auto-upgrade
+                            if (sponsorPlan.autoUpgrade.enabled && sponsorPlan.autoUpgrade.toPlanId) {
+                                const upgradePlan = state.investmentPlans.find(p => p.id === sponsorPlan.autoUpgrade.toPlanId);
+                                if (upgradePlan && sponsor.heldBalance >= upgradePlan.price) {
+                                    sponsor.heldBalance -= upgradePlan.price;
+                                    sponsor.activePlans = [...new Set([...sponsor.activePlans, upgradePlan.name])];
+                                    updatedState.transactions.unshift({id: `TRN_UPG_${sponsor.id}`, userId: sponsor.id, userName: sponsor.username, type: 'Plan Upgrade', amount: -upgradePlan.price, date: new Date().toISOString().split('T')[0], description: `Auto-upgraded to ${upgradePlan.name} from held balance.`, status: 'Approved'});
+                                    updatedState.notifications = createNotification(updatedState.notifications, sponsor.id, `Congratulations! You have been automatically upgraded to the ${upgradePlan.name}.`);
+                                }
+                            }
+                        } else {
+                             sponsor.walletBalance += commTx.amount;
+                             updatedState.notifications = createNotification(updatedState.notifications, commTx.userId, `Your pending commission of $${commTx.amount.toFixed(2)} from ${updatedDeposit.userName} has been approved.`);
+                        }
                     }
                 }
             } 
             else if (originalDeposit.status === Status.Approved && updatedDeposit.status !== Status.Approved) {
-                newUsers = state.users.map(u => u.id === updatedDeposit.userId ? { ...u, walletBalance: u.walletBalance - updatedDeposit.amount } : u);
+                updatedState.users = state.users.map(u => u.id === updatedDeposit.userId ? { ...u, walletBalance: u.walletBalance - updatedDeposit.amount } : u);
             }
             
-            return {
-                ...state,
-                deposits: state.deposits.map(d => d.id === updatedDeposit.id ? updatedDeposit : d),
-                withdrawals: newWithdrawals,
-                users: newUsers,
-                transactions: newTransactions,
-                notifications: newNotifications,
-                currentUser: newUsers.find(u => u.id === state.currentUser?.id) || state.currentUser
-            };
+            updatedState.deposits = updatedState.deposits.map(d => d.id === updatedDeposit.id ? updatedDeposit : d);
+            updatedState.currentUser = updatedState.users.find(u => u.id === state.currentUser?.id) || state.currentUser;
+            return updatedState;
         }
 
         // WITHDRAWAL ACTIONS
@@ -315,7 +343,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             const updatedUser = {
                 ...user,
                 walletBalance: user.walletBalance - plan.price,
-                activePlan: plan.name,
+                activePlans: [...new Set([...user.activePlans, plan.name])], // Add to array, ensuring uniqueness
             };
 
             const newTransaction: Transaction = {

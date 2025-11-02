@@ -52,7 +52,8 @@ const HomePage: React.FC = () => {
                                 <p className="text-4xl font-bold my-4">${plan.price}</p>
                                 <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400 flex-grow">
                                     <li className="flex items-center"><CheckIcon /> Duration: {plan.durationDays === 0 ? 'Unlimited' : `${plan.durationDays} Days`}</li>
-                                    <li className="flex items-center"><CheckIcon /> Direct Commission: {plan.directCommission.type === 'percentage' ? `${plan.directCommission.value}%` : `$${plan.directCommission.value}`}</li>
+                                    {/* FIX: Use `directCommissions` array instead of `directCommission`. Display the first commission as a representative value. */}
+                                    <li className="flex items-center"><CheckIcon /> Direct Commission: {plan.directCommissions.length > 0 ? (plan.directCommissions[0].type === 'percentage' ? `${plan.directCommissions[0].value}%` : `$${plan.directCommissions[0].value}`) : 'N/A'}</li>
                                     <li className="flex items-center"><CheckIcon /> {plan.indirectCommissions.length} Levels of Indirect Commission</li>
                                 </ul>
                                 <Button className="mt-6 w-full" onClick={() => navigate('/register')}>Choose Plan</Button>

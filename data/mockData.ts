@@ -1,10 +1,10 @@
 import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Status, Rule, Transfer, Notification } from '../types';
 
 export const mockUsers: User[] = [
-  { id: 1, username: 'john.doe', fullName: 'John Doe', email: 'john.doe@example.com', phone: '123-456-7890', whatsapp: '1234567890', country: 'USA', walletBalance: 221.00, activePlan: 'Gold Plan', registrationDate: '2023-10-26', status: Status.Active, sponsor: 'admin' },
-  { id: 2, username: 'jane.smith', fullName: 'Jane Smith', email: 'jane.smith@example.com', phone: '234-567-8901', whatsapp: '2345678901', country: 'Canada', walletBalance: 50.00, activePlan: 'Silver Plan', registrationDate: '2023-10-25', status: Status.Active, sponsor: 'john.doe' },
-  { id: 3, username: 'sam.wilson', fullName: 'Sam Wilson', email: 'sam.wilson@example.com', phone: '345-678-9012', whatsapp: '3456789012', country: 'UK', walletBalance: 0, activePlan: 'None', registrationDate: '2023-10-24', status: Status.Pending, sponsor: 'jane.smith' },
-  { id: 4, username: 'chris.green', fullName: 'Chris Green', email: 'chris.green@example.com', phone: '456-789-0123', whatsapp: '4567890123', country: 'Australia', walletBalance: 55.20, activePlan: 'Bronze Plan', registrationDate: '2023-10-23', status: Status.Blocked, sponsor: 'john.doe' },
+  { id: 1, username: 'john.doe', fullName: 'John Doe', email: 'john.doe@example.com', phone: '123-456-7890', whatsapp: '1234567890', country: 'USA', walletBalance: 221.00, heldBalance: 0, activePlans: ['Gold Plan', 'Bronze Plan'], registrationDate: '2023-10-26', status: Status.Active, sponsor: 'admin' },
+  { id: 2, username: 'jane.smith', fullName: 'Jane Smith', email: 'jane.smith@example.com', phone: '234-567-8901', whatsapp: '2345678901', country: 'Canada', walletBalance: 50.00, heldBalance: 15.00, activePlans: ['Silver Plan'], registrationDate: '2023-10-25', status: Status.Active, sponsor: 'john.doe' },
+  { id: 3, username: 'sam.wilson', fullName: 'Sam Wilson', email: 'sam.wilson@example.com', phone: '345-678-9012', whatsapp: '3456789012', country: 'UK', walletBalance: 0, heldBalance: 0, activePlans: [], registrationDate: '2023-10-24', status: Status.Pending, sponsor: 'jane.smith' },
+  { id: 4, username: 'chris.green', fullName: 'Chris Green', email: 'chris.green@example.com', phone: '456-789-0123', whatsapp: '4567890123', country: 'Australia', walletBalance: 55.20, heldBalance: 0, activePlans: ['Bronze Plan'], registrationDate: '2023-10-23', status: Status.Blocked, sponsor: 'john.doe' },
 ];
 
 export const mockDeposits: Deposit[] = [
@@ -32,7 +32,7 @@ export const mockInvestmentPlans: InvestmentPlan[] = [
     { 
         id: 1, name: 'Bronze Plan', price: 50, durationDays: 30, minWithdraw: 10, description: 'A great starting plan.', status: Status.Active,
         directReferralLimit: 10,
-        directCommission: { type: 'percentage', value: 10 },
+        directCommissions: Array(10).fill(null).map((_, i) => ({ type: 'percentage', value: i < 5 ? 10 : 8 })),
         indirectCommissions: [
             { type: 'percentage', value: 5 },
             { type: 'percentage', value: 2 },
@@ -48,7 +48,7 @@ export const mockInvestmentPlans: InvestmentPlan[] = [
     { 
         id: 2, name: 'Silver Plan', price: 100, durationDays: 60, minWithdraw: 25, description: 'Balanced plan for steady growth.', status: Status.Active,
         directReferralLimit: 20,
-        directCommission: { type: 'fixed', value: 25 },
+        directCommissions: Array(20).fill({ type: 'fixed', value: 25 }),
         indirectCommissions: [
             { type: 'fixed', value: 10 },
             { type: 'fixed', value: 5 },
@@ -65,7 +65,7 @@ export const mockInvestmentPlans: InvestmentPlan[] = [
     { 
         id: 3, name: 'Gold Plan', price: 200, durationDays: 0, minWithdraw: 100, description: 'Premium plan for maximum returns. Never expires.', status: Status.Active,
         directReferralLimit: 0,
-        directCommission: { type: 'percentage', value: 15 },
+        directCommissions: [{ type: 'percentage', value: 15 }], // Example for unlimited referrals
         indirectCommissions: [
             { type: 'percentage', value: 7 },
             { type: 'percentage', value: 3 },
@@ -83,7 +83,7 @@ export const mockInvestmentPlans: InvestmentPlan[] = [
     { 
         id: 4, name: 'Starter (Old)', price: 25, durationDays: 15, minWithdraw: 5, description: 'This plan is no longer available.', status: Status.Disabled,
         directReferralLimit: 5,
-        directCommission: { type: 'fixed', value: 5 },
+        directCommissions: Array(5).fill({ type: 'fixed', value: 5 }),
         indirectCommissions: [],
         commissionDeductions: {
             afterMaxPayout: { type: 'fixed', value: 0 },

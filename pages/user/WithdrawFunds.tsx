@@ -22,7 +22,8 @@ const WithdrawFunds: React.FC = () => {
     
     const activePlanPrices = useMemo(() => 
         [...new Set(investmentPlans.filter(p => p.status === Status.Active).map(p => p.price))]
-        .sort((a,b) => a - b), 
+        // FIX: Explicitly type `a` and `b` as numbers to resolve the arithmetic operation type error.
+        .sort((a: number,b: number) => a - b), 
     [investmentPlans]);
 
     const selectedMethod: PaymentMethod | undefined = useMemo(() =>

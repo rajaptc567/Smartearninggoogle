@@ -18,7 +18,8 @@ export interface User {
   whatsapp?: string;
   country?: string;
   walletBalance: number;
-  activePlan: string;
+  heldBalance: number;
+  activePlans: string[]; // Changed from activePlan
   registrationDate: string;
   status: Status;
   sponsor?: string;
@@ -100,7 +101,7 @@ export interface InvestmentPlan {
     status: Status.Active | Status.Disabled;
     
     directReferralLimit: number; // 0 for unlimited
-    directCommission: Commission;
+    directCommissions: Commission[]; // Changed from directCommission
     indirectCommissions: Commission[]; // Array for multi-level
 
     commissionDeductions: {
@@ -125,7 +126,7 @@ export interface Transaction {
     id: string;
     userId: number;
     userName: string;
-    type: 'Deposit' | 'Withdrawal' | 'Commission' | 'Manual Credit' | 'Manual Debit' | 'Withdrawal Request' | 'Withdrawal Refund' | 'Plan Purchase' | 'Transfer Sent' | 'Transfer Received' | 'Transfer Request' | 'Transfer Refund';
+    type: 'Deposit' | 'Withdrawal' | 'Commission' | 'Manual Credit' | 'Manual Debit' | 'Withdrawal Request' | 'Withdrawal Refund' | 'Plan Purchase' | 'Transfer Sent' | 'Transfer Received' | 'Transfer Request' | 'Transfer Refund' | 'Plan Upgrade' | 'Held Commission';
     amount: number;
     date: string;
     description: string;
