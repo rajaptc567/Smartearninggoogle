@@ -5,8 +5,8 @@ import { useData } from '../../hooks/useData';
 
 const WithdrawFunds: React.FC = () => {
     const { state, dispatch } = useData();
-    // FIX: Destructure restrictWithdrawalAmount from the nested settings object.
-    const { currentUser, paymentMethods, investmentPlans, settings: { restrictWithdrawalAmount } } = state;
+    const { currentUser, paymentMethods, investmentPlans, settings } = state;
+    const { restrictWithdrawalAmount, siteWideMinWithdrawal, defaultCurrencySymbol } = settings;
 
     const [selectedMethodId, setSelectedMethodId] = useState<string>('');
     const [amount, setAmount] = useState('');
@@ -22,7 +22,6 @@ const WithdrawFunds: React.FC = () => {
     
     const activePlanPrices = useMemo(() => 
         [...new Set(investmentPlans.filter(p => p.status === Status.Active).map(p => p.price))]
-        // FIX: Explicitly type `a` and `b` as numbers to resolve the arithmetic operation type error.
         .sort((a: number,b: number) => a - b), 
     [investmentPlans]);
 
@@ -30,6 +29,12 @@ const WithdrawFunds: React.FC = () => {
         withdrawalMethods.find(method => method.id.toString() === selectedMethodId),
         [selectedMethodId, withdrawalMethods]
     );
+    
+    const effectiveMinAmount = useMemo(() => {
+        if (!selectedMethod) return 0;
+        return Math.max(selectedMethod.minAmount, siteWideMinWithdrawal);
+    }, [selectedMethod, siteWideMinWithdrawal]);
+
 
     const [fee, setFee] = useState(0);
     const [finalAmount, setFinalAmount] = useState(0);
@@ -57,8 +62,8 @@ const WithdrawFunds: React.FC = () => {
         if (numericAmount > currentUser.walletBalance) {
             return alert("Withdrawal amount cannot exceed your wallet balance.");
         }
-        if (numericAmount < selectedMethod.minAmount || numericAmount > selectedMethod.maxAmount) {
-            return alert(`Amount must be between $${selectedMethod.minAmount} and $${selectedMethod.maxAmount}.`);
+        if (numericAmount < effectiveMinAmount || numericAmount > selectedMethod.maxAmount) {
+            return alert(`Amount must be between ${defaultCurrencySymbol}${effectiveMinAmount} and ${defaultCurrencySymbol}${selectedMethod.maxAmount}.`);
         }
 
         const newWithdrawal = {
@@ -100,7 +105,7 @@ const WithdrawFunds: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md max-w-2xl mx-auto">
             <div className="text-center mb-6 border-b dark:border-gray-700 pb-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Available Wallet Balance</p>
-                <p className="text-4xl font-bold text-green-600 dark:text-green-400">${currentUser.walletBalance.toFixed(2)}</p>
+                <p className="text-4xl font-bold text-green-600 dark:text-green-400">{defaultCurrencySymbol}{currentUser.walletBalance.toFixed(2)}</p>
             </div>
 
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Request Withdrawal</h2>
@@ -123,21 +128,21 @@ const WithdrawFunds: React.FC = () => {
                             {restrictWithdrawalAmount ? (
                                 <select id="amount" value={amount} onChange={e => setAmount(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600" required>
                                     <option value="">-- Select amount --</option>
-                                    {activePlanPrices.map(price => <option key={price} value={price}>${price.toFixed(2)}</option>)}
+                                    {activePlanPrices.map(price => <option key={price} value={price}>{defaultCurrencySymbol}{price.toFixed(2)}</option>)}
                                 </select>
                             ) : (
-                                <input type="number" id="amount" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={`Min ${selectedMethod.minAmount}, Max ${selectedMethod.maxAmount}`} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600" required />
+                                <input type="number" id="amount" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={`Min ${effectiveMinAmount}, Max ${selectedMethod.maxAmount}`} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm dark:bg-gray-700 dark:border-gray-600" required />
                             )}
                         </div>
                         
                         <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg text-sm">
                             <div className="flex justify-between">
                                 <span className="text-gray-600 dark:text-gray-300">Service Fee ({selectedMethod.feePercent}%):</span>
-                                <span className="font-medium text-red-600 dark:text-red-400">-${fee.toFixed(2)}</span>
+                                <span className="font-medium text-red-600 dark:text-red-400">-{defaultCurrencySymbol}{fee.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between mt-1 font-bold">
                                 <span className="text-gray-800 dark:text-white">You Will Receive:</span>
-                                <span className="text-green-600 dark:text-green-400">${finalAmount.toFixed(2)}</span>
+                                <span className="text-green-600 dark:text-green-400">{defaultCurrencySymbol}{finalAmount.toFixed(2)}</span>
                             </div>
                         </div>
 

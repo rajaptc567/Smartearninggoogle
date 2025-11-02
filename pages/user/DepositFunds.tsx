@@ -3,9 +3,18 @@ import { Deposit, PaymentMethod, Status, Withdrawal } from '../../types';
 import Button from '../../components/ui/Button';
 import { useData } from '../../hooks/useData';
 
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+    });
+};
+
 const DepositFunds: React.FC = () => {
     const { state, dispatch } = useData();
-    const { paymentMethods, currentUser, withdrawals } = state;
+    const { paymentMethods, currentUser, withdrawals, settings } = state;
 
     const [selectedMethodId, setSelectedMethodId] = useState<string>('');
     const [amount, setAmount] = useState('');
@@ -39,6 +48,7 @@ const DepositFunds: React.FC = () => {
         
         setMatchedWithdrawal(match || null);
       } else {
+        // FIX: The `match` variable is not in scope here. Set to null when conditions aren't met.
         setMatchedWithdrawal(null);
       }
     }, [amount, selectedMethod, withdrawals]);
@@ -56,13 +66,15 @@ const DepositFunds: React.FC = () => {
         return selectedMethod;
     }, [selectedMethod, matchedWithdrawal]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedMethod || !amount || !transactionId || !receipt || !currentUser) {
             alert('Please fill all fields and upload a receipt.');
             return;
         }
         
+        const receiptUrl = await fileToBase64(receipt);
+
         const newDeposit: Deposit = {
             id: `DEP${Date.now()}`,
             userId: currentUser.id,
@@ -70,7 +82,7 @@ const DepositFunds: React.FC = () => {
             method: selectedMethod.name,
             amount: parseFloat(amount),
             transactionId: transactionId,
-            receiptUrl: URL.createObjectURL(receipt),
+            receiptUrl: receiptUrl,
             status: Status.Pending,
             date: new Date().toISOString().split('T')[0],
             userNotes: userNotes,
@@ -130,7 +142,7 @@ const DepositFunds: React.FC = () => {
                                     <p className="text-xs italic">{paymentDetails?.instructions}</p>
                                 </div>
                             </div>
-                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Limits: ${selectedMethod.minAmount} - ${selectedMethod.maxAmount}</p>
+                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">Limits: {settings.defaultCurrencySymbol}{selectedMethod.minAmount} - {settings.defaultCurrencySymbol}{selectedMethod.maxAmount}</p>
                         </div>
 
                         <div className="space-y-4">
@@ -148,7 +160,7 @@ const DepositFunds: React.FC = () => {
                             </div>
                              <div>
                                 <label htmlFor="receipt" className="block text-sm font-medium text-gray-700 dark:text-gray-300">6. Upload Receipt / Screenshot</label>
-                                <input type="file" id="receipt" onChange={(e) => e.target.files && setReceipt(e.target.files[0])} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" required />
+                                <input type="file" id="receipt" onChange={(e) => e.target.files && setReceipt(e.target.files[0])} accept="image/*" className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900" required />
                                 {receipt && <p className="text-xs text-gray-500 mt-1">{receipt.name}</p>}
                             </div>
                         </div>

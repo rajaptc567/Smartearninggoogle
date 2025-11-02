@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal';
 
 const InvestmentPlans: React.FC = () => {
     const { state, dispatch } = useData();
-    const { investmentPlans } = state;
+    const { investmentPlans, settings } = state;
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<InvestmentPlan | null>(null);
@@ -51,12 +51,12 @@ const InvestmentPlans: React.FC = () => {
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white">{plan.name}</h3>
                             <Badge status={plan.status} />
                         </div>
-                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">${plan.price}</p>
+                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 my-2">{settings.defaultCurrencySymbol}{plan.price}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 h-10">{plan.description}</p>
                         <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 border-t pt-4 dark:border-gray-700 flex-grow">
                             <p><strong>Direct Referrals:</strong> {plan.directReferralLimit === 0 ? 'Unlimited' : plan.directReferralLimit}</p>
                             <p><strong>Indirect Levels:</strong> {plan.indirectCommissions.length}</p>
-                            <p><strong>Min. Withdraw:</strong> ${plan.minWithdraw}</p>
+                            <p><strong>Min. Withdraw:</strong> {settings.defaultCurrencySymbol}{plan.minWithdraw}</p>
                             <p><strong>Duration:</strong> {plan.durationDays === 0 ? 'Unlimited' : `${plan.durationDays} days`}</p>
                             <p><strong>Auto Upgrade:</strong> {plan.autoUpgrade.enabled ? `Yes (to Plan ID ${plan.autoUpgrade.toPlanId})` : 'No'}</p>
                             <p><strong>Hold Position:</strong> {plan.holdPosition.enabled ? `Yes (Slots: ${plan.holdPosition.slots.join(', ')})` : 'No'}</p>
@@ -202,7 +202,7 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ plan, onClose, onSave }) 
                                <input type="number" value={comm.value} onChange={(e) => handleCommissionChange(index, 'value', e.target.value)} placeholder="Value" className="dark:bg-gray-700 dark:border-gray-600 rounded-md"/>
                                <select value={comm.type} onChange={(e) => handleCommissionChange(index, 'type', e.target.value)} className="dark:bg-gray-700 dark:border-gray-600 rounded-md">
                                    <option value="percentage">%</option>
-                                   <option value="fixed">Fixed ($)</option>
+                                   <option value="fixed">Fixed ({state.settings.defaultCurrencySymbol})</option>
                                </select>
                            </div>
                         ))}
@@ -219,7 +219,7 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ plan, onClose, onSave }) 
                                <input type="number" value={comm.value} onChange={(e) => handleIndirectCommissionChange(index, 'value', e.target.value)} placeholder="Value" className="dark:bg-gray-700 dark:border-gray-600 rounded-md"/>
                                <select value={comm.type} onChange={(e) => handleIndirectCommissionChange(index, 'type', e.target.value)} className="dark:bg-gray-700 dark:border-gray-600 rounded-md">
                                    <option value="percentage">%</option>
-                                   <option value="fixed">Fixed ($)</option>
+                                   <option value="fixed">Fixed ({state.settings.defaultCurrencySymbol})</option>
                                </select>
                                <Button type="button" size="sm" variant="danger" onClick={() => removeIndirectLevel(index)}>Remove</Button>
                            </div>

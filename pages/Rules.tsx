@@ -5,7 +5,7 @@ import Table from '../components/ui/Table';
 
 const Rules: React.FC = () => {
     const { state, dispatch } = useData();
-    const { rules, investmentPlans } = state;
+    const { rules, investmentPlans, settings } = state;
     
     const [fromPlan, setFromPlan] = useState('');
     const [toPlan, setToPlan] = useState('');
@@ -59,7 +59,7 @@ const Rules: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label htmlFor="requiredEarnings" className="block text-sm font-medium">Required Earnings ($)</label>
+                            <label htmlFor="requiredEarnings" className="block text-sm font-medium">Required Earnings ({settings.defaultCurrencySymbol})</label>
                             <input type="number" id="requiredEarnings" value={requiredEarnings} onChange={e => setRequiredEarnings(e.target.value)} className="mt-1 block w-full rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                          <div className="">
@@ -75,7 +75,7 @@ const Rules: React.FC = () => {
                                 <tr key={rule.id} className="text-gray-700 dark:text-gray-400">
                                     <td className="px-4 py-3">{rule.fromPlan}</td>
                                     <td className="px-4 py-3">{rule.toPlan}</td>
-                                    <td className="px-4 py-3">${rule.requiredEarnings.toFixed(2)}</td>
+                                    <td className="px-4 py-3">{settings.defaultCurrencySymbol}{rule.requiredEarnings.toFixed(2)}</td>
                                     <td className="px-4 py-3">
                                         <Button size="sm" variant="danger" onClick={() => handleDeleteRule(rule.id)}>Delete</Button>
                                     </td>

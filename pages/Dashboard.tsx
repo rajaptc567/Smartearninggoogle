@@ -4,8 +4,11 @@ import { mockUsers, mockDeposits, mockWithdrawals } from '../data/mockData';
 import { Deposit, Status } from '../types';
 import Badge from '../components/ui/Badge';
 import Table from '../components/ui/Table';
+import { useData } from '../hooks/useData';
 
 const Dashboard: React.FC = () => {
+    const { state } = useData();
+    const { settings } = state;
     const totalDeposits = mockDeposits.reduce((sum, d) => d.status === Status.Approved ? sum + d.amount : sum, 0);
     const totalWithdrawals = mockWithdrawals.reduce((sum, w) => w.status === Status.Paid ? sum + w.finalAmount : sum, 0);
 
@@ -27,9 +30,9 @@ const Dashboard: React.FC = () => {
         <div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard title="Total Users" value={mockUsers.length} icon={<UsersIcon />} />
-                <StatCard title="Total Deposits" value={`$${totalDeposits.toFixed(2)}`} icon={<DepositIcon />} />
-                <StatCard title="Total Withdrawals" value={`$${totalWithdrawals.toFixed(2)}`} icon={<WithdrawalIcon />} />
-                <StatCard title="Commissions Paid" value="$5,780.50" icon={<CommissionIcon />} />
+                <StatCard title="Total Deposits" value={`${settings.defaultCurrencySymbol}${totalDeposits.toFixed(2)}`} icon={<DepositIcon />} />
+                <StatCard title="Total Withdrawals" value={`${settings.defaultCurrencySymbol}${totalWithdrawals.toFixed(2)}`} icon={<WithdrawalIcon />} />
+                <StatCard title="Commissions Paid" value={`${settings.defaultCurrencySymbol}5,780.50`} icon={<CommissionIcon />} />
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -38,7 +41,7 @@ const Dashboard: React.FC = () => {
                     {recentDeposits.map((deposit: Deposit) => (
                         <tr key={deposit.id} className="text-gray-700 dark:text-gray-400">
                             <td className="px-4 py-3">{deposit.userName}</td>
-                            <td className="px-4 py-3">${deposit.amount.toFixed(2)}</td>
+                            <td className="px-4 py-3">{settings.defaultCurrencySymbol}{deposit.amount.toFixed(2)}</td>
                             <td className="px-4 py-3">{deposit.method}</td>
                             <td className="px-4 py-3"><Badge status={deposit.status} /></td>
                             <td className="px-4 py-3 text-sm">{deposit.date}</td>

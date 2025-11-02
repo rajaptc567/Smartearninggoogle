@@ -144,7 +144,8 @@ export interface Rule {
 export interface Settings {
     isUserTransferEnabled: boolean;
     restrictWithdrawalAmount: boolean;
-    // Add other settings here in the future
+    defaultCurrencySymbol: string;
+    siteWideMinWithdrawal: number;
 }
 
 export interface Notification {

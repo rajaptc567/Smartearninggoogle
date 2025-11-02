@@ -8,7 +8,7 @@ import { useData } from '../hooks/useData';
 
 const Deposits: React.FC = () => {
     const { state, dispatch } = useData();
-    const { deposits } = state;
+    const { deposits, settings } = state;
 
     const tableHeaders = ['User', 'Amount', 'Method', 'Transaction ID', 'Receipt', 'Status', 'Date'];
     
@@ -72,7 +72,7 @@ const Deposits: React.FC = () => {
                       onClick={() => handleRowClick(deposit)}
                     >
                         <td className="px-4 py-3">{deposit.userName}</td>
-                        <td className="px-4 py-3">${deposit.amount.toFixed(2)}</td>
+                        <td className="px-4 py-3">{settings.defaultCurrencySymbol}{deposit.amount.toFixed(2)}</td>
                         <td className="px-4 py-3">{deposit.method}</td>
                         <td className="px-4 py-3 text-xs font-mono">{deposit.transactionId}</td>
                         <td className="px-4 py-3">
@@ -109,7 +109,7 @@ const Deposits: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                             <div><span className="font-semibold">User:</span> {selectedDeposit.userName} (ID: {selectedDeposit.userId})</div>
-                            <div><span className="font-semibold">Amount:</span> ${selectedDeposit.amount.toFixed(2)}</div>
+                            <div><span className="font-semibold">Amount:</span> {settings.defaultCurrencySymbol}{selectedDeposit.amount.toFixed(2)}</div>
                             <div><span className="font-semibold">Method:</span> {selectedDeposit.method}</div>
                             <div><span className="font-semibold">Date:</span> {selectedDeposit.date}</div>
                             <div className="md:col-span-2"><span className="font-semibold">Transaction ID:</span> <span className="font-mono">{selectedDeposit.transactionId}</span></div>

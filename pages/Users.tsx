@@ -8,7 +8,7 @@ import Modal from '../components/ui/Modal';
 
 const Users: React.FC = () => {
     const { state, dispatch } = useData();
-    const { users } = state;
+    const { users, settings } = state;
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -85,7 +85,7 @@ const Users: React.FC = () => {
                             {user.email}<br/>
                             <span className="text-xs text-gray-600 dark:text-gray-400">{user.phone}</span>
                         </td>
-                        <td className="px-4 py-3 text-sm">${user.walletBalance.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm">{settings.defaultCurrencySymbol}{user.walletBalance.toFixed(2)}</td>
                         <td className="px-4 py-3 text-sm">{user.activePlans.join(', ') || 'None'}</td>
                         <td className="px-4 py-3 text-xs">
                            <Badge status={user.status} />
@@ -178,7 +178,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, mode, onClose, onSa
 // UserDetailsModal Component
 const UserDetailsModal: React.FC<{ user: User; onClose: () => void; onSwitchToEdit: () => void;}> = ({ user, onClose, onSwitchToEdit }) => {
     const { state } = useData();
-    const { users, deposits, withdrawals, transactions } = state;
+    const { users, deposits, withdrawals, transactions, settings } = state;
     
     const userDeposits = useMemo(() => deposits.filter(d => d.userId === user.id), [deposits, user.id]);
     const userWithdrawals = useMemo(() => withdrawals.filter(w => w.userId === user.id), [withdrawals, user.id]);
@@ -218,7 +218,7 @@ const UserDetailsModal: React.FC<{ user: User; onClose: () => void; onSwitchToEd
                          <tr key={item.id} className="border-b dark:border-gray-700">
                             {type !== 'transactions' && <td className="p-2">{item.id}</td>}
                             {type === 'transactions' && <td className="p-2">{item.type}</td>}
-                            <td className={`p-2 font-semibold ${item.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>${item.amount?.toFixed(2)}</td>
+                            <td className={`p-2 font-semibold ${item.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>{settings.defaultCurrencySymbol}{item.amount?.toFixed(2)}</td>
                             
                             {type !== 'transactions' ? 
                                 <td className="p-2"><Badge status={item.status} /></td>
@@ -255,8 +255,8 @@ const UserDetailsModal: React.FC<{ user: User; onClose: () => void; onSwitchToEd
                         </div>
                          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
                             <h3 className="font-semibold mb-2">Wallet & Plan</h3>
-                            <p className="text-sm"><strong>Available Balance:</strong> <span className="font-bold text-green-600">${user.walletBalance.toFixed(2)}</span></p>
-                            <p className="text-sm"><strong>Held for Upgrade:</strong> <span className="font-bold text-yellow-600">${user.heldBalance.toFixed(2)}</span></p>
+                            <p className="text-sm"><strong>Available Balance:</strong> <span className="font-bold text-green-600">{settings.defaultCurrencySymbol}{user.walletBalance.toFixed(2)}</span></p>
+                            <p className="text-sm"><strong>Held for Upgrade:</strong> <span className="font-bold text-yellow-600">{settings.defaultCurrencySymbol}{user.heldBalance.toFixed(2)}</span></p>
                             <p className="text-sm"><strong>Current Plan(s):</strong> {user.activePlans.join(', ') || 'None'}</p>
                             <p className="text-sm"><strong>Status:</strong> <Badge status={user.status} /></p>
                         </div>

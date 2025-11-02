@@ -8,7 +8,7 @@ import Modal from '../components/ui/Modal';
 
 const Withdrawals: React.FC = () => {
   const { state, dispatch } = useData();
-  const { withdrawals } = state;
+  const { withdrawals, settings } = state;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
@@ -58,12 +58,12 @@ const Withdrawals: React.FC = () => {
             onClick={() => handleRowClick(w)}
           >
             <td className="px-4 py-3">{w.userName}</td>
-            <td className="px-4 py-3">${w.amount.toFixed(2)}</td>
-            <td className="px-4 py-3 font-semibold">${w.finalAmount.toFixed(2)}</td>
+            <td className="px-4 py-3">{settings.defaultCurrencySymbol}{w.amount.toFixed(2)}</td>
+            <td className="px-4 py-3 font-semibold">{settings.defaultCurrencySymbol}{w.finalAmount.toFixed(2)}</td>
             <td className="px-4 py-3">{w.method}</td>
             <td className="px-4 py-3"><Badge status={w.status} /></td>
             <td className="px-4 py-3 text-sm">
-                {w.status === Status.Matching ? `$${w.matchRemainingAmount?.toFixed(2)}` : 'N/A'}
+                {w.status === Status.Matching ? `${settings.defaultCurrencySymbol}${w.matchRemainingAmount?.toFixed(2)}` : 'N/A'}
             </td>
             <td className="px-4 py-3 text-sm">{w.date}</td>
           </tr>
@@ -77,7 +77,7 @@ const Withdrawals: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                   <div><span className="font-semibold">User:</span> {selectedWithdrawal.userName} (ID: {selectedWithdrawal.userId})</div>
-                  <div><span className="font-semibold">Amount:</span> ${selectedWithdrawal.amount.toFixed(2)}</div>
+                  <div><span className="font-semibold">Amount:</span> {settings.defaultCurrencySymbol}{selectedWithdrawal.amount.toFixed(2)}</div>
                   <div><span className="font-semibold">Method:</span> {selectedWithdrawal.method}</div>
                   <div><span className="font-semibold">Date:</span> {selectedWithdrawal.date}</div>
               </div>

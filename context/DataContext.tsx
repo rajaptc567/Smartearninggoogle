@@ -28,6 +28,8 @@ const initialState: AppState = {
     settings: {
         isUserTransferEnabled: true,
         restrictWithdrawalAmount: false,
+        defaultCurrencySymbol: '$',
+        siteWideMinWithdrawal: 10,
     },
     notifications: mockNotifications,
     currentUser: mockUsers[0] || null,
@@ -129,7 +131,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             let newNotifications = createNotification(
                 state.notifications,
                 newDeposit.userId,
-                `Your deposit request #${newDeposit.id} for $${newDeposit.amount.toFixed(2)} is pending.`
+                `Your deposit request #${newDeposit.id} for ${state.settings.defaultCurrencySymbol}${newDeposit.amount.toFixed(2)} is pending.`
             );
 
             if (!depositor || newDeposit.matchedWithdrawalId) {
@@ -183,7 +185,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                     newNotifications = createNotification(
                         newNotifications,
                         sponsor.id,
-                        `You have a new pending Level ${level} commission of $${commissionValue.toFixed(2)} from ${depositor.username}.`
+                        `You have a new pending Level ${level} commission of ${state.settings.defaultCurrencySymbol}${commissionValue.toFixed(2)} from ${depositor.username}.`
                     );
                 }
                 
@@ -202,7 +204,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             updatedState.notifications = createNotification(
                 updatedState.notifications,
                 updatedDeposit.userId,
-                `Your deposit #${updatedDeposit.id} for $${updatedDeposit.amount.toFixed(2)} has been ${updatedDeposit.status}.`
+                `Your deposit #${updatedDeposit.id} for ${state.settings.defaultCurrencySymbol}${updatedDeposit.amount.toFixed(2)} has been ${updatedDeposit.status}.`
             );
 
             if (originalDeposit.status !== Status.Approved && updatedDeposit.status === Status.Approved) {
@@ -238,7 +240,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                         if (isHeldPosition) {
                             sponsor.heldBalance += commTx.amount;
                             commTx.type = 'Held Commission';
-                            updatedState.notifications = createNotification(updatedState.notifications, commTx.userId, `A commission of $${commTx.amount.toFixed(2)} from ${updatedDeposit.userName} was added to your held balance for upgrade.`);
+                            updatedState.notifications = createNotification(updatedState.notifications, commTx.userId, `A commission of ${state.settings.defaultCurrencySymbol}${commTx.amount.toFixed(2)} from ${updatedDeposit.userName} was added to your held balance for upgrade.`);
                             
                             // Check for auto-upgrade
                             if (sponsorPlan.autoUpgrade.enabled && sponsorPlan.autoUpgrade.toPlanId) {
@@ -252,7 +254,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                             }
                         } else {
                              sponsor.walletBalance += commTx.amount;
-                             updatedState.notifications = createNotification(updatedState.notifications, commTx.userId, `Your pending commission of $${commTx.amount.toFixed(2)} from ${updatedDeposit.userName} has been approved.`);
+                             updatedState.notifications = createNotification(updatedState.notifications, commTx.userId, `Your pending commission of ${state.settings.defaultCurrencySymbol}${commTx.amount.toFixed(2)} from ${updatedDeposit.userName} has been approved.`);
                         }
                     }
                 }
@@ -271,7 +273,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
              const newWithdrawal = action.payload;
              const updatedUsers = state.users.map(u => u.id === newWithdrawal.userId ? { ...u, walletBalance: u.walletBalance - newWithdrawal.amount } : u);
              const newTransaction: Transaction = { id: `TRN${Date.now()}`, userId: newWithdrawal.userId, userName: newWithdrawal.userName, type: 'Withdrawal Request', amount: -newWithdrawal.amount, date: new Date().toISOString().split('T')[0], description: `Pending Withdrawal #${newWithdrawal.id}`, status: 'Pending' };
-             const newNotifications = createNotification(state.notifications, newWithdrawal.userId, `Your withdrawal request #${newWithdrawal.id} for $${newWithdrawal.amount.toFixed(2)} is pending.`);
+             const newNotifications = createNotification(state.notifications, newWithdrawal.userId, `Your withdrawal request #${newWithdrawal.id} for ${state.settings.defaultCurrencySymbol}${newWithdrawal.amount.toFixed(2)} is pending.`);
 
              return {
                  ...state,
@@ -360,7 +362,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
             const updatedUsers = state.users.map(u => u.id === userId ? updatedUser : u);
             const updatedCurrentUser = state.currentUser?.id === userId ? updatedUser : state.currentUser;
             
-            const newNotifications = createNotification(state.notifications, userId, `You successfully purchased the ${plan.name} for $${plan.price}.`);
+            const newNotifications = createNotification(state.notifications, userId, `You successfully purchased the ${plan.name} for ${state.settings.defaultCurrencySymbol}${plan.price}.`);
             
             alert(`${plan.name} purchased successfully!`);
 
@@ -400,7 +402,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 status: 'Approved'
             };
 
-            const newNotifications = createNotification(state.notifications, userId, `An admin has adjusted your wallet by $${amount.toFixed(2)}. Reason: ${description}`);
+            const newNotifications = createNotification(state.notifications, userId, `Admin Adjustment: Your wallet balance was changed by ${amount > 0 ? '+' : ''}${state.settings.defaultCurrencySymbol}${Math.abs(amount).toFixed(2)}. Reason: ${description}`);
 
             return {
                 ...state,
@@ -446,7 +448,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 description: `Transfer to ${recipientName} #${newTransfer.id}`,
                 status: 'Pending'
             };
-            const newNotifications = createNotification(state.notifications, senderId, `Your transfer request of $${amount.toFixed(2)} to ${recipientName} is pending.`);
+            const newNotifications = createNotification(state.notifications, senderId, `Your transfer request of ${state.settings.defaultCurrencySymbol}${amount.toFixed(2)} to ${recipientName} is pending.`);
 
             return {
                 ...state,
@@ -475,7 +477,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                     originalTx.status = 'Approved';
                 }
                 newNotifications = createNotification(newNotifications, updatedTransfer.senderId, `Your transfer to ${updatedTransfer.recipientName} was approved.`);
-                newNotifications = createNotification(newNotifications, updatedTransfer.recipientId, `You received a transfer of $${updatedTransfer.amount.toFixed(2)} from ${updatedTransfer.senderName}.`);
+                newNotifications = createNotification(newNotifications, updatedTransfer.recipientId, `You received a transfer of ${state.settings.defaultCurrencySymbol}${updatedTransfer.amount.toFixed(2)} from ${updatedTransfer.senderName}.`);
 
             } else if (updatedTransfer.status === Status.Rejected) {
                 newUsers = newUsers.map(u => u.id === updatedTransfer.senderId ? { ...u, walletBalance: u.walletBalance + updatedTransfer.amount } : u);

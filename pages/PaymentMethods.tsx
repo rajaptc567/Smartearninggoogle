@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal';
 
 const PaymentMethods: React.FC = () => {
     const { state, dispatch } = useData();
-    const { paymentMethods } = state;
+    const { paymentMethods, settings } = state;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(null);
@@ -57,7 +57,7 @@ const PaymentMethods: React.FC = () => {
                         </div>
                         <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
                             <p><span className="font-semibold">Account:</span> {method.accountTitle} ({method.accountNumber})</p>
-                            <p><span className="font-semibold">Limits:</span> ${method.minAmount} - ${method.maxAmount}</p>
+                            <p><span className="font-semibold">Limits:</span> {settings.defaultCurrencySymbol}{method.minAmount} - {settings.defaultCurrencySymbol}{method.maxAmount}</p>
                             <p><span className="font-semibold">Fee:</span> {method.feePercent}%</p>
                         </div>
                         <div className="mt-6 flex justify-end space-x-2">

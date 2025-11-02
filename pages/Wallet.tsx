@@ -7,7 +7,7 @@ import Badge from '../components/ui/Badge';
 
 const Wallet: React.FC = () => {
     const { state, dispatch } = useData();
-    const { users, transactions } = state;
+    const { users, transactions, settings } = state;
     
     const [identifier, setIdentifier] = useState('');
     const [amount, setAmount] = useState('');
@@ -51,7 +51,7 @@ const Wallet: React.FC = () => {
             }
         });
 
-        alert(`Successfully adjusted ${targetUser.username}'s balance by $${adjustmentAmount.toFixed(2)}.`);
+        alert(`Successfully adjusted ${targetUser.username}'s balance by ${settings.defaultCurrencySymbol}${adjustmentAmount.toFixed(2)}.`);
         setIdentifier('');
         setAmount('');
         setReason('Admin manual adjustment');
@@ -110,7 +110,7 @@ const Wallet: React.FC = () => {
                             <td className="px-4 py-3 text-sm">{tx.userName}</td>
                             <td className="px-4 py-3 text-sm">{tx.type}</td>
                             <td className={`px-4 py-3 text-sm font-semibold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ${tx.amount.toFixed(2)}
+                                {settings.defaultCurrencySymbol}{tx.amount.toFixed(2)}
                             </td>
                              <td className="px-4 py-3 text-xs">
                                 <Badge status={tx.status as Status || Status.Approved} />
