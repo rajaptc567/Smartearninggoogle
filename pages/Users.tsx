@@ -8,7 +8,7 @@ import Modal from '../components/ui/Modal';
 
 const Users: React.FC = () => {
     const { state, dispatch } = useData();
-    const { users, settings } = state;
+    const { users, settings, isLoadingUsers } = state;
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -55,6 +55,16 @@ const Users: React.FC = () => {
 
     const tableHeaders = ['User', 'Contact', 'Wallet Balance', 'Active Plan(s)', 'Status', 'Actions'];
 
+    if (isLoadingUsers) {
+        return (
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Loading Members...</h2>
+                <p className="text-gray-500 mt-2">Attempting to connect to the backend server...</p>
+                <p className="text-xs text-gray-400 mt-2">Please ensure your local server is running on `http://localhost:3001`</p>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
@@ -71,35 +81,43 @@ const Users: React.FC = () => {
                 </div>
             </div>
              <Table headers={tableHeaders}>
-                {filteredUsers.map((user: User) => (
-                    <tr key={user.id} className="text-gray-700 dark:text-gray-400">
-                        <td className="px-4 py-3">
-                            <div className="flex items-center text-sm">
-                                <div>
-                                    <p className="font-semibold">{user.fullName}</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">@{user.username} (ID: {user.id})</p>
+                {filteredUsers.length > 0 ? (
+                    filteredUsers.map((user: User) => (
+                        <tr key={user.id} className="text-gray-700 dark:text-gray-400">
+                            <td className="px-4 py-3">
+                                <div className="flex items-center text-sm">
+                                    <div>
+                                        <p className="font-semibold">{user.fullName}</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400">@{user.username} (ID: {user.id})</p>
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                            {user.email}<br/>
-                            <span className="text-xs text-gray-600 dark:text-gray-400">{user.phone}</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm">{settings.defaultCurrencySymbol}{user.walletBalance.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-sm">{user.activePlans.join(', ') || 'None'}</td>
-                        <td className="px-4 py-3 text-xs">
-                           <Badge status={user.status} />
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                            <div className="flex items-center space-x-2">
-                                <Button size="sm" variant="secondary" onClick={() => handleOpenModal(user, 'details')}>Details</Button>
-                                <Button size="sm" variant={user.status === Status.Blocked ? 'success' : 'danger'} onClick={() => handleToggleStatus(user.id)}>
-                                    {user.status === Status.Blocked ? 'Unblock' : 'Block'}
-                                </Button>
-                            </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                                {user.email}<br/>
+                                <span className="text-xs text-gray-600 dark:text-gray-400">{user.phone}</span>
+                            </td>
+                            <td className="px-4 py-3 text-sm">{settings.defaultCurrencySymbol}{user.walletBalance.toFixed(2)}</td>
+                            <td className="px-4 py-3 text-sm">{user.activePlans.join(', ') || 'None'}</td>
+                            <td className="px-4 py-3 text-xs">
+                               <Badge status={user.status} />
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                                <div className="flex items-center space-x-2">
+                                    <Button size="sm" variant="secondary" onClick={() => handleOpenModal(user, 'details')}>Details</Button>
+                                    <Button size="sm" variant={user.status === Status.Blocked ? 'success' : 'danger'} onClick={() => handleToggleStatus(user.id)}>
+                                        {user.status === Status.Blocked ? 'Unblock' : 'Block'}
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))
+                ) : (
+                    <tr>
+                        <td colSpan={tableHeaders.length} className="text-center px-4 py-8 text-gray-500 dark:text-gray-400">
+                            No users found. This could be because the backend server is not running or no users match your search criteria.
                         </td>
                     </tr>
-                ))}
+                )}
             </Table>
             {isModalOpen && (
                 <UserFormModal 

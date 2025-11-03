@@ -1,6 +1,6 @@
-import React, { createContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useReducer, ReactNode, useEffect } from 'react';
 import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Rule, Status, Transfer, Settings, Notification } from '../types';
-import { mockUsers, mockDeposits, mockWithdrawals, mockPaymentMethods, mockInvestmentPlans, mockTransactions, mockRules, mockTransfers, mockNotifications } from '../data/mockData';
+import { mockDeposits, mockWithdrawals, mockPaymentMethods, mockInvestmentPlans, mockTransactions, mockRules, mockTransfers, mockNotifications } from '../data/mockData';
 
 interface AppState {
     users: User[];
@@ -14,10 +14,11 @@ interface AppState {
     settings: Settings;
     notifications: Notification[];
     currentUser: User | null;
+    isLoadingUsers: boolean;
 }
 
 const initialState: AppState = {
-    users: mockUsers,
+    users: [],
     deposits: mockDeposits,
     withdrawals: mockWithdrawals,
     transfers: mockTransfers,
@@ -32,10 +33,13 @@ const initialState: AppState = {
         siteWideMinWithdrawal: 10,
     },
     notifications: mockNotifications,
-    currentUser: mockUsers[0] || null,
+    currentUser: null, // Will be set after users are loaded
+    isLoadingUsers: true,
 };
 
 type Action =
+    | { type: 'SET_USERS'; payload: User[] }
+    | { type: 'SET_USERS_LOADING'; payload: boolean }
     | { type: 'ADD_USER'; payload: User }
     | { type: 'UPDATE_USER'; payload: User }
     | { type: 'TOGGLE_USER_STATUS'; payload: number }
@@ -79,6 +83,14 @@ const dataReducer = (state: AppState, action: Action): AppState => {
     };
     
     switch (action.type) {
+        // DATA LOADING ACTIONS
+        case 'SET_USERS_LOADING':
+            return { ...state, isLoadingUsers: action.payload };
+        case 'SET_USERS': {
+             // Set current user to the first user from the API for demo purposes
+            const currentUser = action.payload.length > 0 ? action.payload[0] : null;
+            return { ...state, users: action.payload, currentUser };
+        }
         // NOTIFICATION ACTIONS
         case 'ADD_NOTIFICATION':
             const newNotification = { ...action.payload, id: Date.now() };
@@ -511,6 +523,27 @@ export const DataContext = createContext<{ state: AppState; dispatch: React.Disp
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(dataReducer, initialState);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            dispatch({ type: 'SET_USERS_LOADING', payload: true });
+            try {
+                // This is the API endpoint you will create in your backend server.
+                const response = await fetch('http://localhost:3001/api/users');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data: User[] = await response.json();
+                dispatch({ type: 'SET_USERS', payload: data });
+            } catch (error) {
+                console.error("Failed to fetch users. Please ensure the backend server is running.", error);
+            } finally {
+                dispatch({ type: 'SET_USERS_LOADING', payload: false });
+            }
+        };
+
+        fetchUsers();
+    }, []); // Empty dependency array means this runs once on mount
 
     return (
         <DataContext.Provider value={{ state, dispatch }}>

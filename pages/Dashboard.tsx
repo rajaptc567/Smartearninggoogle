@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { mockUsers, mockDeposits, mockWithdrawals } from '../data/mockData';
 import { Deposit, Status } from '../types';
 import Badge from '../components/ui/Badge';
 import Table from '../components/ui/Table';
@@ -8,11 +7,12 @@ import { useData } from '../hooks/useData';
 
 const Dashboard: React.FC = () => {
     const { state } = useData();
-    const { settings } = state;
-    const totalDeposits = mockDeposits.reduce((sum, d) => d.status === Status.Approved ? sum + d.amount : sum, 0);
-    const totalWithdrawals = mockWithdrawals.reduce((sum, w) => w.status === Status.Paid ? sum + w.finalAmount : sum, 0);
+    const { settings, users, deposits, withdrawals } = state;
+    
+    const totalDeposits = deposits.reduce((sum, d) => d.status === Status.Approved ? sum + d.amount : sum, 0);
+    const totalWithdrawals = withdrawals.reduce((sum, w) => w.status === Status.Paid ? sum + w.finalAmount : sum, 0);
 
-    const recentDeposits = mockDeposits.slice(0, 5);
+    const recentDeposits = deposits.slice(0, 5);
 
     const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode }> = ({ title, value, icon }) => (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex items-center justify-between">
@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
     return (
         <div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatCard title="Total Users" value={mockUsers.length} icon={<UsersIcon />} />
+                <StatCard title="Total Users" value={users.length} icon={<UsersIcon />} />
                 <StatCard title="Total Deposits" value={`${settings.defaultCurrencySymbol}${totalDeposits.toFixed(2)}`} icon={<DepositIcon />} />
                 <StatCard title="Total Withdrawals" value={`${settings.defaultCurrencySymbol}${totalWithdrawals.toFixed(2)}`} icon={<WithdrawalIcon />} />
                 <StatCard title="Commissions Paid" value={`${settings.defaultCurrencySymbol}5,780.50`} icon={<CommissionIcon />} />
