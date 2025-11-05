@@ -1,6 +1,5 @@
 import React, { createContext, useReducer, ReactNode, useEffect } from 'react';
 import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Rule, Status, Transfer, Settings, Notification } from '../types';
-import { mockDeposits, mockWithdrawals, mockPaymentMethods, mockInvestmentPlans, mockTransactions, mockRules, mockTransfers, mockNotifications } from '../data/mockData';
 
 interface AppState {
     users: User[];
@@ -19,26 +18,26 @@ interface AppState {
 
 const initialState: AppState = {
     users: [],
-    deposits: mockDeposits,
-    withdrawals: mockWithdrawals,
-    transfers: mockTransfers,
-    paymentMethods: mockPaymentMethods,
-    investmentPlans: mockInvestmentPlans,
-    transactions: mockTransactions,
-    rules: mockRules,
+    deposits: [],
+    withdrawals: [],
+    transfers: [],
+    paymentMethods: [],
+    investmentPlans: [],
+    transactions: [],
+    rules: [],
     settings: {
         isUserTransferEnabled: true,
         restrictWithdrawalAmount: false,
         defaultCurrencySymbol: '$',
         siteWideMinWithdrawal: 10,
     },
-    notifications: mockNotifications,
-    currentUser: null, // Will be set after users are loaded
+    notifications: [],
+    currentUser: null,
     isLoadingUsers: true,
 };
 
 type Action =
-    | { type: 'SET_USERS'; payload: User[] }
+    | { type: 'SET_INITIAL_DATA'; payload: Omit<AppState, 'currentUser' | 'isLoadingUsers'> }
     | { type: 'SET_USERS_LOADING'; payload: boolean }
     | { type: 'ADD_USER'; payload: User }
     | { type: 'UPDATE_USER'; payload: User }
@@ -86,10 +85,15 @@ const dataReducer = (state: AppState, action: Action): AppState => {
         // DATA LOADING ACTIONS
         case 'SET_USERS_LOADING':
             return { ...state, isLoadingUsers: action.payload };
-        case 'SET_USERS': {
-             // Set current user to the first user from the API for demo purposes
-            const currentUser = action.payload.length > 0 ? action.payload[0] : null;
-            return { ...state, users: action.payload, currentUser };
+        case 'SET_INITIAL_DATA': {
+            const { users } = action.payload;
+            const currentUser = users.length > 0 ? users[0] : null; // Set first user as default
+            return {
+                ...state,
+                ...action.payload,
+                currentUser,
+                isLoadingUsers: false,
+            };
         }
         // NOTIFICATION ACTIONS
         case 'ADD_NOTIFICATION':
@@ -525,25 +529,49 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [state, dispatch] = useReducer(dataReducer, initialState);
 
     useEffect(() => {
-        const fetchUsers = async () => {
+        const fetchInitialData = async () => {
             dispatch({ type: 'SET_USERS_LOADING', payload: true });
             try {
-                // This is the API endpoint you will create in your backend server.
-                const response = await fetch('http://localhost:3001/api/users');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                const endpoints = [
+                    'users', 'deposits', 'withdrawals', 'transfers', 
+                    'payment-methods', 'investment-plans', 'transactions', 
+                    'rules', 'settings', 'notifications'
+                ];
+                
+                const requests = endpoints.map(ep => fetch(`http://localhost:3001/api/${ep.replace(/_/g, '-')}`));
+                const responses = await Promise.all(requests);
+
+                for (const response of responses) {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} on ${response.url}`);
+                    }
                 }
-                const data: User[] = await response.json();
-                dispatch({ type: 'SET_USERS', payload: data });
+
+                const dataPromises = responses.map(res => res.json());
+                const [
+                    users, deposits, withdrawals, transfers,
+                    paymentMethods, investmentPlans, transactions,
+                    rules, settings, notifications
+                ] = await Promise.all(dataPromises);
+                
+                dispatch({
+                    type: 'SET_INITIAL_DATA',
+                    payload: {
+                        users, deposits, withdrawals, transfers,
+                        paymentMethods, investmentPlans, transactions,
+                        rules, settings, notifications,
+                    }
+                });
+
             } catch (error) {
-                console.error("Failed to fetch users. Please ensure the backend server is running.", error);
-            } finally {
+                console.error("Failed to fetch initial data. Please ensure the backend server is running.", error);
+                // On failure, stop loading, and the UI will show empty states.
                 dispatch({ type: 'SET_USERS_LOADING', payload: false });
             }
         };
 
-        fetchUsers();
-    }, []); // Empty dependency array means this runs once on mount
+        fetchInitialData();
+    }, []);
 
     return (
         <DataContext.Provider value={{ state, dispatch }}>
