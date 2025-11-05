@@ -94,7 +94,7 @@ export const DataContext = createContext<{ state: AppState; actions: ApiActions 
     actions: {} as ApiActions,
 });
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'https://smtbackend.onrender.com/api';
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(dataReducer, initialState);
