@@ -181,10 +181,17 @@ export const Notification = mongoose.model('Notification', NotificationSchema);
 // --- Database Connection ---
 export const connectDB = async () => {
     try {
+        if (!process.env.MONGODB_URI) {
+            console.error('FATAL ERROR: MONGODB_URI environment variable is not set.');
+            process.exit(1);
+        }
         const conn = await mongoose.connect(process.env.MONGODB_URI);
         console.log(`MongoDB Connected: ${conn.connection.host}`);
         await seedDatabase();
     } catch (error) {
+        // Redact password from connection string for logging
+        const redactedUri = process.env.MONGODB_URI.replace(/:([^:]+)@/, ':********@');
+        console.error(`Using connection string: ${redactedUri}`);
         console.error(`Error connecting to MongoDB: ${error.message}`);
         process.exit(1);
     }
