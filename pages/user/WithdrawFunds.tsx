@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { PaymentMethod, Status } from '../../types';
+import { PaymentMethod, Status, Withdrawal } from '../../types';
 import Button from '../../components/ui/Button';
 import { useData } from '../../hooks/useData';
 
 const WithdrawFunds: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { currentUser, paymentMethods, investmentPlans, settings } = state;
     const { restrictWithdrawalAmount, siteWideMinWithdrawal, defaultCurrencySymbol } = settings;
 
@@ -51,7 +51,7 @@ const WithdrawFunds: React.FC = () => {
         }
     }, [amount, selectedMethod]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const numericAmount = parseFloat(amount);
 
@@ -66,22 +66,19 @@ const WithdrawFunds: React.FC = () => {
             return alert(`Amount must be between ${defaultCurrencySymbol}${effectiveMinAmount} and ${defaultCurrencySymbol}${selectedMethod.maxAmount}.`);
         }
 
-        const newWithdrawal = {
-            id: `WDR${Date.now()}`,
+        const newWithdrawal: Partial<Withdrawal> = {
             userId: currentUser.id,
             userName: currentUser.username,
             method: selectedMethod.name,
             amount: numericAmount,
             fee: fee,
             finalAmount: finalAmount,
-            status: Status.Pending as Status.Pending,
-            date: new Date().toISOString().split('T')[0],
             accountTitle: accountTitle,
             accountNumber: accountNumber,
             userNotes: userNotes,
         };
         
-        dispatch({ type: 'ADD_WITHDRAWAL', payload: newWithdrawal });
+        await actions.addWithdrawal(newWithdrawal);
         
         setIsSubmitted(true);
     };

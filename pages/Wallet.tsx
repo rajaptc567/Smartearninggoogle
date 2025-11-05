@@ -6,7 +6,7 @@ import { Status, Transaction } from '../types';
 import Badge from '../components/ui/Badge';
 
 const Wallet: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { users, transactions, settings } = state;
     
     const [identifier, setIdentifier] = useState('');
@@ -19,7 +19,7 @@ const Wallet: React.FC = () => {
 
     const tableHeaders = ['Transaction ID', 'User', 'Type', 'Amount', 'Status', 'Date', 'Description'];
 
-    const handleAdjustment = (e: React.FormEvent) => {
+    const handleAdjustment = async (e: React.FormEvent) => {
         e.preventDefault();
         
         const targetUser = users.find(u => 
@@ -42,13 +42,10 @@ const Wallet: React.FC = () => {
         
         const adjustmentAmount = actionType === 'credit' ? numericAmount : -numericAmount;
         
-        dispatch({
-            type: 'MANUAL_WALLET_ADJUSTMENT',
-            payload: {
-                userId: targetUser.id,
-                amount: adjustmentAmount,
-                description: reason
-            }
+        await actions.manualWalletAdjustment({
+            userId: targetUser.id,
+            amount: adjustmentAmount,
+            description: reason
         });
 
         alert(`Successfully adjusted ${targetUser.username}'s balance by ${settings.defaultCurrencySymbol}${adjustmentAmount.toFixed(2)}.`);

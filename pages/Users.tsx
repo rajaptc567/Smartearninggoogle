@@ -7,7 +7,7 @@ import { useData } from '../hooks/useData';
 import Modal from '../components/ui/Modal';
 
 const Users: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { users, settings, isLoadingUsers } = state;
     
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,19 +26,25 @@ const Users: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleSaveUser = (user: User) => {
+    const handleSaveUser = async (user: Partial<User>) => {
         if (editingUser) {
-            dispatch({ type: 'UPDATE_USER', payload: user });
+            await actions.updateUser(user as User);
         } else {
-            // This is a simplified add user, a real one would need more fields
-            const newUser = { ...user, id: Date.now(), walletBalance: 0, heldBalance: 0, activePlans: [], registrationDate: new Date().toISOString().split('T')[0], status: Status.Active };
-            dispatch({ type: 'ADD_USER', payload: newUser });
+            const newUser: Partial<User> = { 
+                ...user, 
+                walletBalance: 0, 
+                heldBalance: 0, 
+                activePlans: [], 
+                registrationDate: new Date().toISOString().split('T')[0], 
+                status: Status.Active 
+            };
+            await actions.addUser(newUser);
         }
         handleCloseModal();
     };
 
-    const handleToggleStatus = (userId: number) => {
-        dispatch({ type: 'TOGGLE_USER_STATUS', payload: userId });
+    const handleToggleStatus = async (userId: number) => {
+        await actions.toggleUserStatus(userId);
     }
 
     const filteredUsers = useMemo(() => users.filter(user => {
@@ -138,7 +144,7 @@ interface UserFormModalProps {
     user: User | null;
     mode: 'edit' | 'details';
     onClose: () => void;
-    onSave: (user: User) => void;
+    onSave: (user: Partial<User>) => void;
     onSwitchToEdit: () => void;
 }
 
@@ -155,7 +161,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, mode, onClose, onSa
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData as User);
+        onSave(formData);
     };
 
     if (mode === 'details' && user) {

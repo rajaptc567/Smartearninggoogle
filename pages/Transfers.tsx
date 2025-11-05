@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal';
 import { useData } from '../hooks/useData';
 
 const Transfers: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { transfers } = state;
 
     const tableHeaders = ['Sender', 'Recipient', 'Amount', 'Status', 'Date'];
@@ -24,14 +24,14 @@ const Transfers: React.FC = () => {
         }
     }, [selectedTransfer]);
 
-    const handleSaveChanges = () => {
+    const handleSaveChanges = async () => {
         if (selectedTransfer) {
             const updatedTransfer = {
                 ...selectedTransfer,
                 status: currentStatus,
                 adminNotes: adminNotes,
             };
-            dispatch({ type: 'UPDATE_TRANSFER', payload: updatedTransfer });
+            await actions.updateTransfer(updatedTransfer);
             handleCloseDetailModal();
         }
     };

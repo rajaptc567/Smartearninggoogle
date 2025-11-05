@@ -6,7 +6,7 @@ import { PaymentMethod } from '../types';
 import Modal from '../components/ui/Modal';
 
 const PaymentMethods: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { paymentMethods, settings } = state;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,19 +22,18 @@ const PaymentMethods: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleSave = (method: PaymentMethod) => {
+    const handleSave = async (method: PaymentMethod) => {
         if (editingMethod) {
-            dispatch({ type: 'UPDATE_PAYMENT_METHOD', payload: method });
+            await actions.updatePaymentMethod(method);
         } else {
-            const newMethod = { ...method, id: Date.now() };
-            dispatch({ type: 'ADD_PAYMENT_METHOD', payload: newMethod });
+            await actions.addPaymentMethod(method);
         }
         handleCloseModal();
     };
     
-    const handleDelete = (methodId: number) => {
+    const handleDelete = async (methodId: number) => {
         if (window.confirm('Are you sure you want to delete this method? This action cannot be undone.')) {
-            dispatch({ type: 'DELETE_PAYMENT_METHOD', payload: methodId });
+            await actions.deletePaymentMethod(methodId);
             alert('Payment method deleted successfully.');
         }
     };

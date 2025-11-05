@@ -4,7 +4,7 @@ import { useData } from '../hooks/useData';
 import { Settings as SettingsType } from '../types';
 
 const Settings: React.FC = () => {
-  const { state, dispatch } = useData();
+  const { state, actions } = useData();
   const { settings } = state;
 
   const [localSettings, setLocalSettings] = useState<SettingsType>(settings);
@@ -24,9 +24,9 @@ const Settings: React.FC = () => {
     setLocalSettings(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) || 0 : value }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
-      dispatch({ type: 'UPDATE_SETTINGS', payload: localSettings });
+      await actions.updateSettings(localSettings);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
   };

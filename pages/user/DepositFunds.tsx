@@ -13,7 +13,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 const DepositFunds: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { paymentMethods, currentUser, withdrawals, settings } = state;
 
     const [selectedMethodId, setSelectedMethodId] = useState<string>('');
@@ -48,7 +48,6 @@ const DepositFunds: React.FC = () => {
         
         setMatchedWithdrawal(match || null);
       } else {
-        // FIX: The `match` variable is not in scope here. Set to null when conditions aren't met.
         setMatchedWithdrawal(null);
       }
     }, [amount, selectedMethod, withdrawals]);
@@ -75,8 +74,7 @@ const DepositFunds: React.FC = () => {
         
         const receiptUrl = await fileToBase64(receipt);
 
-        const newDeposit: Deposit = {
-            id: `DEP${Date.now()}`,
+        const newDeposit: Partial<Deposit> = {
             userId: currentUser.id,
             userName: currentUser.username,
             method: selectedMethod.name,
@@ -89,7 +87,7 @@ const DepositFunds: React.FC = () => {
             matchedWithdrawalId: matchedWithdrawal ? matchedWithdrawal.id : undefined,
         };
 
-        dispatch({ type: 'ADD_DEPOSIT', payload: newDeposit });
+        await actions.addDeposit(newDeposit);
         
         setIsSubmitted(true);
     };

@@ -6,7 +6,7 @@ import Modal from '../../components/ui/Modal';
 import { useNavigate } from 'react-router-dom';
 
 const UserInvestmentPlans: React.FC = () => {
-  const { state, dispatch } = useData();
+  const { state, actions } = useData();
   const { investmentPlans, currentUser, settings } = state;
   const navigate = useNavigate();
 
@@ -24,9 +24,10 @@ const UserInvestmentPlans: React.FC = () => {
     setIsModalOpen(true);
   }
 
-  const handleConfirmPurchase = () => {
+  const handleConfirmPurchase = async () => {
     if (selectedPlan) {
-        dispatch({ type: 'PURCHASE_PLAN', payload: { userId: currentUser.id, planId: selectedPlan.id } });
+        await actions.purchasePlan({ userId: currentUser.id, planId: selectedPlan.id });
+        alert(`${selectedPlan.name} purchased successfully!`);
     }
     handleCloseModal();
   };

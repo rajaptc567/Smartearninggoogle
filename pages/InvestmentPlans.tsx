@@ -6,7 +6,7 @@ import { useData } from '../hooks/useData';
 import Modal from '../components/ui/Modal';
 
 const InvestmentPlans: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { investmentPlans, settings } = state;
     
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,19 +22,18 @@ const InvestmentPlans: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    const handleSave = (plan: InvestmentPlan) => {
+    const handleSave = async (plan: InvestmentPlan) => {
         if (editingPlan) {
-            dispatch({ type: 'UPDATE_INVESTMENT_PLAN', payload: plan });
+            await actions.updateInvestmentPlan(plan);
         } else {
-            const newPlan = { ...plan, id: Date.now() };
-            dispatch({ type: 'ADD_INVESTMENT_PLAN', payload: newPlan });
+            await actions.addInvestmentPlan(plan);
         }
         handleCloseModal();
     };
 
-    const handleDelete = (planId: number) => {
+    const handleDelete = async (planId: number) => {
         if (window.confirm('Are you sure you want to delete this plan? This action is irreversible.')) {
-            dispatch({ type: 'DELETE_INVESTMENT_PLAN', payload: planId });
+            await actions.deleteInvestmentPlan(planId);
         }
     }
 

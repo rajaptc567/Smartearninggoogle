@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import Button from '../../components/ui/Button';
 import { useData } from '../../hooks/useData';
+import { Transfer } from '../../types';
 
 const TransferFunds: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { currentUser, users } = state;
     
     const [recipientIdentifier, setRecipientIdentifier] = useState('');
     const [amount, setAmount] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const numericAmount = parseFloat(amount);
         
@@ -43,16 +44,15 @@ const TransferFunds: React.FC = () => {
             return;
         }
         
-        dispatch({ 
-            type: 'ADD_TRANSFER', 
-            payload: {
-                senderId: currentUser.id,
-                senderName: currentUser.username,
-                recipientId: recipient.id,
-                recipientName: recipient.username,
-                amount: numericAmount,
-            }
-        });
+        const newTransfer: Partial<Transfer> = {
+            senderId: currentUser.id,
+            senderName: currentUser.username,
+            recipientId: recipient.id,
+            recipientName: recipient.username,
+            amount: numericAmount,
+        };
+        
+        await actions.addTransfer(newTransfer);
 
         setIsSubmitted(true);
         // Reset form after submission

@@ -9,15 +9,18 @@ interface NotificationBellProps {
 
 const NotificationBell: React.FC<NotificationBellProps> = ({ notifications, userId }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { dispatch } = useData();
+  const { actions } = useData();
 
   const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
 
   const handleToggle = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen && unreadCount > 0 && userId) {
+    const nextIsOpen = !isOpen;
+    setIsOpen(nextIsOpen);
+    if (nextIsOpen && unreadCount > 0 && userId) {
       // Mark as read when the panel is opened
-      dispatch({ type: 'MARK_NOTIFICATIONS_AS_READ', payload: userId });
+      // This is a "fire and forget" action, we don't need to wait for it.
+      // The state will update on the next global data refresh.
+      actions.markNotificationsAsRead(userId);
     }
   };
 

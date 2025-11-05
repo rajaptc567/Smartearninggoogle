@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal';
 import { useData } from '../hooks/useData';
 
 const Deposits: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { deposits, settings } = state;
 
     const tableHeaders = ['User', 'Amount', 'Method', 'Transaction ID', 'Receipt', 'Status', 'Date'];
@@ -27,14 +27,14 @@ const Deposits: React.FC = () => {
         }
     }, [selectedDeposit]);
 
-    const handleSaveChanges = () => {
+    const handleSaveChanges = async () => {
         if (selectedDeposit) {
             const updatedDeposit = {
                 ...selectedDeposit,
                 status: currentStatus,
                 adminNotes: adminNotes,
             };
-            dispatch({ type: 'UPDATE_DEPOSIT', payload: updatedDeposit });
+            await actions.updateDeposit(updatedDeposit);
             handleCloseDetailModal();
         }
     };

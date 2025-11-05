@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import Button from '../components/ui/Button';
 import { useData } from '../hooks/useData';
 import Table from '../components/ui/Table';
+import { Rule } from '../types';
 
 const Rules: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { rules, investmentPlans, settings } = state;
     
     const [fromPlan, setFromPlan] = useState('');
@@ -13,27 +14,26 @@ const Rules: React.FC = () => {
 
     const activePlans = investmentPlans.filter(p => p.status === 'Active');
 
-    const handleAddRule = (e: React.FormEvent) => {
+    const handleAddRule = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!fromPlan || !toPlan || !requiredEarnings) {
             alert('Please fill all fields');
             return;
         }
-        const newRule = {
-            id: Date.now(),
+        const newRule: Partial<Rule> = {
             fromPlan,
             toPlan,
             requiredEarnings: parseFloat(requiredEarnings),
         };
-        dispatch({ type: 'ADD_RULE', payload: newRule });
+        await actions.addRule(newRule);
         setFromPlan('');
         setToPlan('');
         setRequiredEarnings('');
     };
     
-    const handleDeleteRule = (ruleId: number) => {
+    const handleDeleteRule = async (ruleId: number) => {
         if(window.confirm('Are you sure you want to delete this rule?')) {
-            dispatch({ type: 'DELETE_RULE', payload: ruleId });
+            await actions.deleteRule(ruleId);
         }
     }
 

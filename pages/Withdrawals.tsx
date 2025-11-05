@@ -7,7 +7,7 @@ import { useData } from '../hooks/useData';
 import Modal from '../components/ui/Modal';
 
 const Withdrawals: React.FC = () => {
-  const { state, dispatch } = useData();
+  const { state, actions } = useData();
   const { withdrawals, settings } = state;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,14 +32,14 @@ const Withdrawals: React.FC = () => {
     setSelectedWithdrawal(null);
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (selectedWithdrawal) {
       const updatedWithdrawal = {
         ...selectedWithdrawal,
         status: currentStatus,
         adminNotes: adminNotes,
       };
-      dispatch({ type: 'UPDATE_WITHDRAWAL', payload: updatedWithdrawal });
+      await actions.updateWithdrawal(updatedWithdrawal);
       handleCloseModal();
     }
   };

@@ -4,7 +4,7 @@ import Button from '../../components/ui/Button';
 import { User } from '../../types';
 
 const Profile: React.FC = () => {
-    const { state, dispatch } = useData();
+    const { state, actions } = useData();
     const { currentUser } = state;
     
     const [formData, setFormData] = useState<Partial<User>>(currentUser || {});
@@ -26,10 +26,10 @@ const Profile: React.FC = () => {
         setPasswords({ ...passwords, [e.target.name]: e.target.value });
     };
 
-    const handleInfoSubmit = (e: React.FormEvent) => {
+    const handleInfoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setInfoMessage('');
-        dispatch({ type: 'UPDATE_USER', payload: { ...currentUser, ...formData } as User });
+        await actions.updateUser({ ...currentUser, ...formData } as User);
         setInfoMessage('Profile information updated successfully!');
         setTimeout(() => setInfoMessage(''), 3000);
     };
@@ -49,7 +49,8 @@ const Profile: React.FC = () => {
             setTimeout(() => setPasswordError(''), 3000);
             return;
         }
-        // In a real app, you would verify the current password here
+        // In a real app, you would verify the current password here via an API call
+        // For now, we simulate success
         setPasswordMessage('Password changed successfully! (Simulation)');
         setPasswords({ current: '', new: '', confirm: '' });
         setTimeout(() => setPasswordMessage(''), 3000);
