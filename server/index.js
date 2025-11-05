@@ -22,7 +22,10 @@ app.use(bodyParser.json({ limit: '10mb' }));
 
 // --- Helper Functions ---
 const createNotification = async (userId, message) => {
+    const maxNotif = await Notification.findOne({}).sort({ _id: -1 });
+    const nextId = maxNotif ? maxNotif._id + 1 : 1;
     await Notification.create({
+        _id: nextId,
         userId,
         message,
         date: new Date().toISOString().split('T')[0],
@@ -51,7 +54,9 @@ app.get('/api/settings', async (req, res) => res.json(await Settings.findOne({ s
 
 // USERS
 app.post('/api/users', async (req, res) => {
-    const newUser = new User(req.body);
+    const maxUser = await User.findOne({}).sort({ _id: -1 });
+    const nextId = maxUser ? maxUser._id + 1 : 1;
+    const newUser = new User({ ...req.body, _id: nextId });
     await newUser.save();
     if (newUser.sponsor) {
         const sponsor = await User.findOne({ username: newUser.sponsor });
@@ -253,12 +258,24 @@ app.put('/api/transfers/:id', async (req, res) => {
 
 
 // PAYMENT METHODS
-app.post('/api/payment-methods', async (req, res) => res.status(201).json(await PaymentMethod.create(req.body)));
+app.post('/api/payment-methods', async (req, res) => {
+    const maxMethod = await PaymentMethod.findOne({}).sort({ _id: -1 });
+    const nextId = maxMethod ? maxMethod._id + 1 : 1;
+    const newMethod = new PaymentMethod({ ...req.body, _id: nextId });
+    await newMethod.save();
+    res.status(201).json(newMethod);
+});
 app.put('/api/payment-methods/:id', async (req, res) => res.json(await PaymentMethod.findByIdAndUpdate(req.params.id, req.body, { new: true })));
 app.delete('/api/payment-methods/:id', async (req, res) => { await PaymentMethod.findByIdAndDelete(req.params.id); res.status(204).send(); });
 
 // INVESTMENT PLANS
-app.post('/api/investment-plans', async (req, res) => res.status(201).json(await InvestmentPlan.create(req.body)));
+app.post('/api/investment-plans', async (req, res) => {
+    const maxPlan = await InvestmentPlan.findOne({}).sort({ _id: -1 });
+    const nextId = maxPlan ? maxPlan._id + 1 : 1;
+    const newPlan = new InvestmentPlan({ ...req.body, _id: nextId });
+    await newPlan.save();
+    res.status(201).json(newPlan);
+});
 app.put('/api/investment-plans/:id', async (req, res) => res.json(await InvestmentPlan.findByIdAndUpdate(req.params.id, req.body, { new: true })));
 app.delete('/api/investment-plans/:id', async (req, res) => { await InvestmentPlan.findByIdAndDelete(req.params.id); res.status(204).send(); });
 
@@ -281,7 +298,13 @@ app.post('/api/users/:userId/purchase-plan', async (req, res) => {
 });
 
 // RULES
-app.post('/api/rules', async (req, res) => res.status(201).json(await Rule.create(req.body)));
+app.post('/api/rules', async (req, res) => {
+    const maxRule = await Rule.findOne({}).sort({ _id: -1 });
+    const nextId = maxRule ? maxRule._id + 1 : 1;
+    const newRule = new Rule({ ...req.body, _id: nextId });
+    await newRule.save();
+    res.status(201).json(newRule);
+});
 app.delete('/api/rules/:id', async (req, res) => { await Rule.findByIdAndDelete(req.params.id); res.status(204).send(); });
 
 // SETTINGS

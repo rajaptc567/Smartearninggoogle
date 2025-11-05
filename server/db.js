@@ -1,6 +1,26 @@
 import mongoose from 'mongoose';
 import 'dotenv/config';
 
+// --- Reusable Schema Options ---
+const transform = (doc, ret) => {
+    // For models with custom string IDs
+    if (ret.depositId) { ret.id = ret.depositId; delete ret.depositId; }
+    else if (ret.withdrawalId) { ret.id = ret.withdrawalId; delete ret.withdrawalId; }
+    else if (ret.transferId) { ret.id = ret.transferId; delete ret.transferId; }
+    else if (ret.transactionId) { ret.id = ret.transactionId; delete ret.transactionId; }
+    // For models with numeric IDs managed via _id
+    else if (ret._id || ret._id === 0) { ret.id = ret._id; }
+    
+    delete ret._id;
+    delete ret.__v;
+};
+
+const schemaOptions = {
+    toJSON: { transform },
+    toObject: { transform }
+};
+
+
 // --- Mongoose Schemas ---
 
 const CommissionSchema = new mongoose.Schema({
@@ -9,6 +29,7 @@ const CommissionSchema = new mongoose.Schema({
 }, { _id: false });
 
 const UserSchema = new mongoose.Schema({
+    _id: Number, // Use Number for ID
     username: { type: String, required: true, unique: true, index: true },
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -21,7 +42,7 @@ const UserSchema = new mongoose.Schema({
     registrationDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
     status: { type: String, enum: ['Active', 'Blocked', 'Pending'], default: 'Active' },
     sponsor: { type: String, index: true },
-});
+}, { _id: false, ...schemaOptions }); // Disable default ObjectId
 
 const DepositSchema = new mongoose.Schema({
     depositId: { type: String, required: true, unique: true },
@@ -36,7 +57,7 @@ const DepositSchema = new mongoose.Schema({
     adminNotes: String,
     userNotes: String,
     matchedWithdrawalId: String,
-});
+}, schemaOptions);
 
 const WithdrawalSchema = new mongoose.Schema({
     withdrawalId: { type: String, required: true, unique: true },
@@ -53,7 +74,7 @@ const WithdrawalSchema = new mongoose.Schema({
     adminNotes: String,
     userNotes: String,
     matchRemainingAmount: Number,
-});
+}, schemaOptions);
 
 const TransferSchema = new mongoose.Schema({
     transferId: { type: String, required: true, unique: true },
@@ -65,9 +86,10 @@ const TransferSchema = new mongoose.Schema({
     status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
     date: { type: String, default: () => new Date().toISOString().split('T')[0] },
     adminNotes: String,
-});
+}, schemaOptions);
 
 const PaymentMethodSchema = new mongoose.Schema({
+    _id: Number,
     name: String,
     type: { type: String, enum: ['Deposit', 'Withdrawal'] },
     accountTitle: String,
@@ -78,9 +100,10 @@ const PaymentMethodSchema = new mongoose.Schema({
     feePercent: Number,
     status: { type: String, enum: ['Enabled', 'Disabled'] },
     logoUrl: String,
-});
+}, { _id: false, ...schemaOptions });
 
 const InvestmentPlanSchema = new mongoose.Schema({
+    _id: Number,
     name: String,
     price: Number,
     durationDays: Number,
@@ -103,7 +126,7 @@ const InvestmentPlanSchema = new mongoose.Schema({
         enabled: Boolean,
         slots: [Number],
     },
-});
+}, { _id: false, ...schemaOptions });
 
 const TransactionSchema = new mongoose.Schema({
     transactionId: { type: String, required: true, unique: true },
@@ -115,13 +138,14 @@ const TransactionSchema = new mongoose.Schema({
     description: String,
     level: Number,
     status: String,
-});
+}, schemaOptions);
 
 const RuleSchema = new mongoose.Schema({
+    _id: Number,
     fromPlan: String,
     toPlan: String,
     requiredEarnings: Number,
-});
+}, { _id: false, ...schemaOptions });
 
 const SettingsSchema = new mongoose.Schema({
     // Using a fixed ID to ensure only one settings document exists
@@ -133,11 +157,12 @@ const SettingsSchema = new mongoose.Schema({
 });
 
 const NotificationSchema = new mongoose.Schema({
+    _id: Number,
     userId: { type: Number, required: true, index: true },
     message: String,
     date: String,
     read: { type: Boolean, default: false },
-});
+}, { _id: false, ...schemaOptions });
 
 
 // --- Mongoose Models ---
@@ -177,17 +202,16 @@ const seedDatabase = async () => {
 
         console.log('Database is empty. Seeding initial data...');
         
-        // Use the same mock data structure as before
         const defaultData = getMockData();
 
-        // Need to manually handle IDs for relationships
+        // Map frontend 'id' to backend '_id' for numeric ID models during seeding
         await User.insertMany(defaultData.users.map(u => ({...u, _id: u.id})));
-        await Deposit.insertMany(defaultData.deposits.map(d => ({...d, depositId: d.id, _id: d.id})));
-        await Withdrawal.insertMany(defaultData.withdrawals.map(w => ({...w, withdrawalId: w.id, _id: w.id})));
+        await Deposit.insertMany(defaultData.deposits);
+        await Withdrawal.insertMany(defaultData.withdrawals);
         await PaymentMethod.insertMany(defaultData.paymentMethods.map(p => ({...p, _id: p.id})));
         await InvestmentPlan.insertMany(defaultData.investmentPlans.map(p => ({...p, _id: p.id})));
-        await Transfer.insertMany(defaultData.transfers.map(t => ({...t, transferId: t.id, _id: t.id})));
-        await Transaction.insertMany(defaultData.transactions.map(t => ({...t, transactionId: t.id, _id: t.id})));
+        await Transfer.insertMany(defaultData.transfers);
+        await Transaction.insertMany(defaultData.transactions);
         await Rule.insertMany(defaultData.rules.map(r => ({...r, _id: r.id})));
         await Notification.insertMany(defaultData.notifications.map(n => ({...n, _id: n.id})));
         await Settings.create(defaultData.settings);
@@ -208,16 +232,16 @@ const getMockData = () => ({
       { id: 4, username: 'chris.green', fullName: 'Chris Green', email: 'chris.green@example.com', phone: '456-789-0123', whatsapp: '4567890123', country: 'Australia', walletBalance: 55.20, heldBalance: 0, activePlans: ['Bronze Plan'], registrationDate: '2023-10-23', status: 'Blocked', sponsor: 'john.doe' },
     ],
     deposits: [
-      { id: 'DEP1001', userId: 2, userName: 'jane.smith', method: 'USDT', amount: 250, transactionId: 'TXN-ABC-123', receiptUrl: 'https://picsum.photos/200/300', status: 'Pending', date: '2023-10-27' },
-      { id: 'DEP1002', userId: 1, userName: 'john.doe', method: 'Easypaisa', amount: 250, transactionId: 'TXN-DEF-456', status: 'Approved', date: '2023-10-26', adminNotes: 'Verified' },
-      { id: 'DEP1003', userId: 4, userName: 'chris.green', method: 'BTC', amount: 500, transactionId: 'TXN-GHI-789', status: 'Rejected', date: '2023-10-25', adminNotes: 'Invalid transaction hash' },
-      { id: 'DEP1004', userId: 2, userName: 'jane.smith', method: 'JazzCash', amount: 50, transactionId: 'TXN-JKL-101', status: 'Approved', date: '2023-10-24', userNotes: 'Urgent deposit for plan upgrade.' },
+      { depositId: 'DEP1001', userId: 2, userName: 'jane.smith', method: 'USDT', amount: 250, transactionId: 'TXN-ABC-123', receiptUrl: 'https://picsum.photos/200/300', status: 'Pending', date: '2023-10-27' },
+      { depositId: 'DEP1002', userId: 1, userName: 'john.doe', method: 'Easypaisa', amount: 250, transactionId: 'TXN-DEF-456', status: 'Approved', date: '2023-10-26', adminNotes: 'Verified' },
+      { depositId: 'DEP1003', userId: 4, userName: 'chris.green', method: 'BTC', amount: 500, transactionId: 'TXN-GHI-789', status: 'Rejected', date: '2023-10-25', adminNotes: 'Invalid transaction hash' },
+      { depositId: 'DEP1004', userId: 2, userName: 'jane.smith', method: 'JazzCash', amount: 50, transactionId: 'TXN-JKL-101', status: 'Approved', date: '2023-10-24', userNotes: 'Urgent deposit for plan upgrade.' },
     ],
     withdrawals: [
-        { id: 'WDR2001', userId: 1, userName: 'john.doe', method: 'Easypaisa', amount: 50, fee: 2.5, finalAmount: 47.5, status: 'Paid', date: '2023-10-26', accountTitle: 'John Doe', accountNumber: '03001234567' },
-        { id: 'WDR2002', userId: 2, userName: 'jane.smith', method: 'Bank Transfer', amount: 100, fee: 5, finalAmount: 95, status: 'Pending', date: '2023-10-27', accountTitle: 'Jane Smith', accountNumber: '1234-5678-9012-3456', userNotes: 'Please process this quickly, thanks!' },
-        { id: 'WDR2003', userId: 1, userName: 'john.doe', method: 'BTC', amount: 75, fee: 3.75, finalAmount: 71.25, status: 'Approved', date: '2023-10-25', accountTitle: 'John Doe BTC', accountNumber: 'bc1q...' },
-        { id: 'WDR2004', userId: 4, userName: 'chris.green', method: 'Easypaisa', amount: 50, fee: 2.5, finalAmount: 47.5, status: 'Matching', date: '2023-10-28', accountTitle: 'Chris Green', accountNumber: '03129876543', matchRemainingAmount: 50 },
+        { withdrawalId: 'WDR2001', userId: 1, userName: 'john.doe', method: 'Easypaisa', amount: 50, fee: 2.5, finalAmount: 47.5, status: 'Paid', date: '2023-10-26', accountTitle: 'John Doe', accountNumber: '03001234567' },
+        { withdrawalId: 'WDR2002', userId: 2, userName: 'jane.smith', method: 'Bank Transfer', amount: 100, fee: 5, finalAmount: 95, status: 'Pending', date: '2023-10-27', accountTitle: 'Jane Smith', accountNumber: '1234-5678-9012-3456', userNotes: 'Please process this quickly, thanks!' },
+        { withdrawalId: 'WDR2003', userId: 1, userName: 'john.doe', method: 'BTC', amount: 75, fee: 3.75, finalAmount: 71.25, status: 'Approved', date: '2023-10-25', accountTitle: 'John Doe BTC', accountNumber: 'bc1q...' },
+        { withdrawalId: 'WDR2004', userId: 4, userName: 'chris.green', method: 'Easypaisa', amount: 50, fee: 2.5, finalAmount: 47.5, status: 'Matching', date: '2023-10-28', accountTitle: 'Chris Green', accountNumber: '03129876543', matchRemainingAmount: 50 },
     ],
     paymentMethods: [
         { id: 1, name: 'Easypaisa', type: 'Deposit', accountTitle: 'John Doe', accountNumber: '03001234567', instructions: 'Send to this account and upload receipt.', minAmount: 10, maxAmount: 1000, feePercent: 0, status: 'Enabled' },
@@ -232,20 +256,20 @@ const getMockData = () => ({
         { id: 4, name: 'Starter (Old)', price: 25, durationDays: 15, minWithdraw: 5, description: 'This plan is no longer available.', status: 'Disabled', directReferralLimit: 5, directCommissions: Array(5).fill({ type: 'fixed', value: 5 }), indirectCommissions: [], commissionDeductions: { afterMaxPayout: { type: 'fixed', value: 0 }, afterMaxEarning: { type: 'fixed', value: 0 }, afterMaxDirect: { type: 'fixed', value: 0 }, }, autoUpgrade: { enabled: false }, holdPosition: { enabled: false, slots: [] }, },
     ],
     transfers: [
-        { id: 'TRF4001', senderId: 1, senderName: 'john.doe', recipientId: 2, recipientName: 'jane.smith', amount: 25, status: 'Pending', date: '2023-10-28' },
-        { id: 'TRF4002', senderId: 2, senderName: 'jane.smith', recipientId: 4, recipientName: 'chris.green', amount: 50, status: 'Approved', date: '2023-10-27', adminNotes: 'Approved' },
+        { transferId: 'TRF4001', senderId: 1, senderName: 'john.doe', recipientId: 2, recipientName: 'jane.smith', amount: 25, status: 'Pending', date: '2023-10-28' },
+        { transferId: 'TRF4002', senderId: 2, senderName: 'jane.smith', recipientId: 4, recipientName: 'chris.green', amount: 50, status: 'Approved', date: '2023-10-27', adminNotes: 'Approved' },
     ],
     transactions: [
-        { id: 'TRN3001', userId: 1, userName: 'john.doe', type: 'Deposit', amount: 250, date: '2023-10-26', description: 'Approved Deposit #DEP1002', status: 'Approved' },
-        { id: 'TRN3002', userId: 2, userName: 'jane.smith', type: 'Withdrawal Request', amount: -100, date: '2023-10-27', description: 'Pending Withdrawal #WDR2002', status: 'Pending' },
-        { id: 'TRN3003', userId: 1, userName: 'john.doe', type: 'Commission', amount: 20, date: '2023-10-26', description: 'From jane.smith', level: 1, status: 'Approved' },
-        { id: 'TRN3005', userId: 1, userName: 'john.doe', type: 'Commission', amount: 1, date: '2023-10-25', description: 'From sam.wilson', level: 2, status: 'Approved' },
-        { id: 'TRN3004', userId: 4, userName: 'chris.green', type: 'Manual Debit', amount: -20, date: '2023-10-25', description: 'Correction for incorrect bonus.', status: 'Approved' },
-        { id: 'TRN3006', userId: 1, userName: 'john.doe', type: 'Transfer Request', amount: -25, date: '2023-10-28', description: 'Transfer to jane.smith #TRF4001', status: 'Pending' },
-        { id: 'TRN3007', userId: 2, userName: 'jane.smith', type: 'Transfer Sent', amount: -50, date: '2023-10-27', description: 'Transfer to chris.green #TRF4002', status: 'Approved' },
-        { id: 'TRN3008', userId: 4, userName: 'chris.green', type: 'Transfer Received', amount: 50, date: '2023-10-27', description: 'From jane.smith #TRF4002', status: 'Approved' },
-        { id: 'TRN3009', userId: 1, userName: 'john.doe', type: 'Withdrawal Request', amount: -50, date: '2023-10-26', description: 'Withdrawal #WDR2001', status: 'Approved' },
-        { id: 'TRN_PENDING_COMM', userId: 1, userName: 'john.doe', type: 'Commission', amount: 37.5, date: '2023-10-27', description: 'From jane.smith (Deposit #DEP1001)', level: 1, status: 'Pending' },
+        { transactionId: 'TRN3001', userId: 1, userName: 'john.doe', type: 'Deposit', amount: 250, date: '2023-10-26', description: 'Approved Deposit #DEP1002', status: 'Approved' },
+        { transactionId: 'TRN3002', userId: 2, userName: 'jane.smith', type: 'Withdrawal Request', amount: -100, date: '2023-10-27', description: 'Pending Withdrawal #WDR2002', status: 'Pending' },
+        { transactionId: 'TRN3003', userId: 1, userName: 'john.doe', type: 'Commission', amount: 20, date: '2023-10-26', description: 'From jane.smith', level: 1, status: 'Approved' },
+        { transactionId: 'TRN3005', userId: 1, userName: 'john.doe', type: 'Commission', amount: 1, date: '2023-10-25', description: 'From sam.wilson', level: 2, status: 'Approved' },
+        { transactionId: 'TRN3004', userId: 4, userName: 'chris.green', type: 'Manual Debit', amount: -20, date: '2023-10-25', description: 'Correction for incorrect bonus.', status: 'Approved' },
+        { transactionId: 'TRN3006', userId: 1, userName: 'john.doe', type: 'Transfer Request', amount: -25, date: '2023-10-28', description: 'Transfer to jane.smith #TRF4001', status: 'Pending' },
+        { transactionId: 'TRN3007', userId: 2, userName: 'jane.smith', type: 'Transfer Sent', amount: -50, date: '2023-10-27', description: 'Transfer to chris.green #TRF4002', status: 'Approved' },
+        { transactionId: 'TRN3008', userId: 4, userName: 'chris.green', type: 'Transfer Received', amount: 50, date: '2023-10-27', description: 'From jane.smith #TRF4002', status: 'Approved' },
+        { transactionId: 'TRN3009', userId: 1, userName: 'john.doe', type: 'Withdrawal Request', amount: -50, date: '2023-10-26', description: 'Withdrawal #WDR2001', status: 'Approved' },
+        { transactionId: 'TRN_PENDING_COMM', userId: 1, userName: 'john.doe', type: 'Commission', amount: 37.5, date: '2023-10-27', description: 'From jane.smith (Deposit #DEP1001)', level: 1, status: 'Pending' },
     ],
     rules: [
         { id: 1, fromPlan: 'Bronze Plan', toPlan: 'Silver Plan', requiredEarnings: 500 },
