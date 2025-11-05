@@ -94,7 +94,8 @@ export const DataContext = createContext<{ state: AppState; actions: ApiActions 
     actions: {} as ApiActions,
 });
 
-const API_BASE_URL = 'https://smtbackend.onrender.com/api';
+// FIX: Add type assertion to `import.meta.env` to resolve TypeScript error about missing 'env' property.
+const API_BASE_URL = (import.meta.env as { byteapiurl?: string }).byteapiurl || 'https://smtbackend.onrender.com/api';
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(dataReducer, initialState);
