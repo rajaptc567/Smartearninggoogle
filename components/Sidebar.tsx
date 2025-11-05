@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -39,8 +40,6 @@ const navLinks = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
-    const location = useLocation();
-
     const baseLinkClass = "flex items-center px-4 py-2.5 rounded-lg transition-colors duration-200";
     const inactiveLinkClass = "text-gray-400 hover:bg-gray-700 hover:text-white";
     const activeLinkClass = "bg-blue-600 text-white";

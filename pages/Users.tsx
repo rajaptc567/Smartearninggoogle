@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo } from 'react';
-import { User, Status, Deposit, Withdrawal, Transaction } from '../types';
+import { User, Status } from '../types';
 import Table from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
@@ -8,7 +9,7 @@ import Modal from '../components/ui/Modal';
 
 const Users: React.FC = () => {
     const { state, actions } = useData();
-    const { users, settings, isLoadingUsers } = state;
+    const { users, settings, isLoadingUsers, error } = state;
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -61,12 +62,29 @@ const Users: React.FC = () => {
 
     const tableHeaders = ['User', 'Contact', 'Wallet Balance', 'Active Plan(s)', 'Status', 'Actions'];
 
+    if (error) {
+        return (
+            <div className="bg-red-50 dark:bg-red-900/50 p-6 rounded-lg shadow-md text-center text-red-700 dark:text-red-300">
+                <h2 className="text-xl font-semibold">Connection Error</h2>
+                <p className="mt-2">{error}</p>
+                <Button onClick={() => actions.reloadData()} className="mt-4">Retry Connection</Button>
+            </div>
+        );
+    }
+
     if (isLoadingUsers) {
         return (
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Loading Members...</h2>
-                <p className="text-gray-500 mt-2">Attempting to connect to the backend server...</p>
-                <p className="text-xs text-gray-400 mt-2">Please ensure your local server is running on `http://localhost:3001`</p>
+                <p className="text-gray-500 mt-2">
+                    Connecting to the backend server...
+                    <br />
+                    <span className="text-xs">(Free services may take up to 50 seconds to start initially)</span>
+                </p>
+                 <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto mt-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
             </div>
         );
     }
@@ -120,7 +138,7 @@ const Users: React.FC = () => {
                 ) : (
                     <tr>
                         <td colSpan={tableHeaders.length} className="text-center px-4 py-8 text-gray-500 dark:text-gray-400">
-                            No users found. This could be because the backend server is not running or no users match your search criteria.
+                           {searchTerm ? 'No users match your search criteria.' : 'No users found. This could be because the backend server is not running or the database is empty.'}
                         </td>
                     </tr>
                 )}
@@ -149,7 +167,6 @@ interface UserFormModalProps {
 }
 
 const UserFormModal: React.FC<UserFormModalProps> = ({ user, mode, onClose, onSave, onSwitchToEdit }) => {
-    const { state } = useData();
     const [formData, setFormData] = useState<Partial<User>>(
         user || { fullName: '', username: '', email: '', phone: '' }
     );

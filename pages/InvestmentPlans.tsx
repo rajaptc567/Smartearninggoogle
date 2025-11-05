@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { InvestmentPlan, Status, CommissionType, Commission } from '../types';
+
+import React, { useState, useEffect } from 'react';
+import { InvestmentPlan, Status, Commission } from '../types';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { useData } from '../hooks/useData';

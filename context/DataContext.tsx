@@ -1,6 +1,7 @@
+
 // FIX: Import `useMemo` from React to fix "Cannot find name 'useMemo'" error.
 import React, { createContext, useReducer, ReactNode, useEffect, useCallback, useMemo } from 'react';
-import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Rule, Status, Transfer, Settings, Notification } from '../types';
+import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Rule, Transfer, Settings, Notification } from '../types';
 
 interface AppState {
     users: User[];
@@ -15,6 +16,7 @@ interface AppState {
     notifications: Notification[];
     currentUser: User | null;
     isLoadingUsers: boolean;
+    error: string | null;
 }
 
 // Define the shape of our API actions
@@ -62,17 +64,21 @@ const initialState: AppState = {
     notifications: [],
     currentUser: null,
     isLoadingUsers: true,
+    error: null,
 };
 
 type Action =
-    | { type: 'SET_INITIAL_DATA'; payload: Omit<AppState, 'currentUser' | 'isLoadingUsers'> }
-    | { type: 'SET_LOADING'; payload: boolean };
+    | { type: 'SET_INITIAL_DATA'; payload: Omit<AppState, 'currentUser' | 'isLoadingUsers' | 'error'> }
+    | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_ERROR'; payload: string | null };
 
 
 const dataReducer = (state: AppState, action: Action): AppState => {
     switch (action.type) {
         case 'SET_LOADING':
             return { ...state, isLoadingUsers: action.payload };
+        case 'SET_ERROR':
+            return { ...state, error: action.payload, isLoadingUsers: false };
         case 'SET_INITIAL_DATA': {
             const { users } = action.payload;
             // Persist the currentUser if they exist in the new user list, otherwise default to first user.
@@ -82,6 +88,7 @@ const dataReducer = (state: AppState, action: Action): AppState => {
                 ...action.payload,
                 currentUser: newCurrentUser,
                 isLoadingUsers: false,
+                error: null, // Reset error on successful data load
             };
         }
         default:
@@ -103,6 +110,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const fetchInitialData = useCallback(async () => {
         dispatch({ type: 'SET_LOADING', payload: true });
+        dispatch({ type: 'SET_ERROR', payload: null });
         try {
             const endpoints = [
                 'users', 'deposits', 'withdrawals', 'transfers', 
@@ -136,8 +144,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
 
         } catch (error) {
-            console.error("Failed to fetch initial data. Please ensure the backend server is running.", error);
-            dispatch({ type: 'SET_LOADING', payload: false });
+            const errorMessage = 'Failed to fetch initial data. Please ensure the backend server is running and accessible. Check the browser console for more details.';
+            console.error(errorMessage, error);
+            dispatch({ type: 'SET_ERROR', payload: errorMessage });
         }
     }, []);
 

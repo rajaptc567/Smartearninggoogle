@@ -1,8 +1,9 @@
+
 import React, { useState, useMemo } from 'react';
 import Button from '../components/ui/Button';
 import { useData } from '../hooks/useData';
 import Table from '../components/ui/Table';
-import { Deposit, Withdrawal, User, Transaction, Transfer, Status } from '../types';
+import { Status } from '../types';
 import Badge from '../components/ui/Badge';
 
 type ReportType = 'deposits' | 'withdrawals' | 'users' | 'commissions' | 'transfers' | 'all_transactions';

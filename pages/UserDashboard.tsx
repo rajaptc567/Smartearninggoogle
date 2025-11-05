@@ -1,9 +1,9 @@
+
 import React, { useState, useMemo, useCallback } from 'react';
-import { Status, Transaction, User, Deposit, InvestmentPlan } from '../types';
+import { Status, Transaction, User } from '../types';
 import Table from '../components/ui/Table';
 import Button from '../components/ui/Button';
 import { useData } from '../hooks/useData';
-import { useNavigate } from 'react-router-dom';
 import Badge from '../components/ui/Badge';
 
 // Icons
