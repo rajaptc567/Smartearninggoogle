@@ -1,8 +1,206 @@
-// server/db.js
-import { JSONFilePreset } from 'lowdb/node';
+import mongoose from 'mongoose';
+import 'dotenv/config';
 
-// Default data structure if db.json doesn't exist
-const defaultData = {
+// --- Mongoose Schemas ---
+
+const CommissionSchema = new mongoose.Schema({
+    type: { type: String, enum: ['percentage', 'fixed'], required: true },
+    value: { type: Number, required: true },
+}, { _id: false });
+
+const UserSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true, index: true },
+    fullName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
+    whatsapp: String,
+    country: String,
+    walletBalance: { type: Number, default: 0 },
+    heldBalance: { type: Number, default: 0 },
+    activePlans: [String],
+    registrationDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
+    status: { type: String, enum: ['Active', 'Blocked', 'Pending'], default: 'Active' },
+    sponsor: { type: String, index: true },
+});
+
+const DepositSchema = new mongoose.Schema({
+    depositId: { type: String, required: true, unique: true },
+    userId: { type: Number, required: true, index: true },
+    userName: { type: String, required: true },
+    method: String,
+    amount: Number,
+    transactionId: String,
+    receiptUrl: String,
+    status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
+    date: { type: String, default: () => new Date().toISOString().split('T')[0] },
+    adminNotes: String,
+    userNotes: String,
+    matchedWithdrawalId: String,
+});
+
+const WithdrawalSchema = new mongoose.Schema({
+    withdrawalId: { type: String, required: true, unique: true },
+    userId: { type: Number, required: true, index: true },
+    userName: { type: String, required: true },
+    method: String,
+    amount: Number,
+    fee: Number,
+    finalAmount: Number,
+    accountTitle: String,
+    accountNumber: String,
+    status: { type: String, enum: ['Pending', 'Approved', 'Paid', 'Rejected', 'Matching'], default: 'Pending' },
+    date: { type: String, default: () => new Date().toISOString().split('T')[0] },
+    adminNotes: String,
+    userNotes: String,
+    matchRemainingAmount: Number,
+});
+
+const TransferSchema = new mongoose.Schema({
+    transferId: { type: String, required: true, unique: true },
+    senderId: { type: Number, required: true },
+    senderName: { type: String, required: true },
+    recipientId: { type: Number, required: true },
+    recipientName: { type: String, required: true },
+    amount: Number,
+    status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
+    date: { type: String, default: () => new Date().toISOString().split('T')[0] },
+    adminNotes: String,
+});
+
+const PaymentMethodSchema = new mongoose.Schema({
+    name: String,
+    type: { type: String, enum: ['Deposit', 'Withdrawal'] },
+    accountTitle: String,
+    accountNumber: String,
+    instructions: String,
+    minAmount: Number,
+    maxAmount: Number,
+    feePercent: Number,
+    status: { type: String, enum: ['Enabled', 'Disabled'] },
+    logoUrl: String,
+});
+
+const InvestmentPlanSchema = new mongoose.Schema({
+    name: String,
+    price: Number,
+    durationDays: Number,
+    minWithdraw: Number,
+    description: String,
+    status: { type: String, enum: ['Active', 'Disabled'] },
+    directReferralLimit: Number,
+    directCommissions: [CommissionSchema],
+    indirectCommissions: [CommissionSchema],
+    commissionDeductions: {
+        afterMaxPayout: CommissionSchema,
+        afterMaxEarning: CommissionSchema,
+        afterMaxDirect: CommissionSchema,
+    },
+    autoUpgrade: {
+        enabled: Boolean,
+        toPlanId: Number,
+    },
+    holdPosition: {
+        enabled: Boolean,
+        slots: [Number],
+    },
+});
+
+const TransactionSchema = new mongoose.Schema({
+    transactionId: { type: String, required: true, unique: true },
+    userId: { type: Number, required: true, index: true },
+    userName: String,
+    type: String,
+    amount: Number,
+    date: String,
+    description: String,
+    level: Number,
+    status: String,
+});
+
+const RuleSchema = new mongoose.Schema({
+    fromPlan: String,
+    toPlan: String,
+    requiredEarnings: Number,
+});
+
+const SettingsSchema = new mongoose.Schema({
+    // Using a fixed ID to ensure only one settings document exists
+    singletonId: { type: String, default: 'main_settings', unique: true }, 
+    isUserTransferEnabled: Boolean,
+    restrictWithdrawalAmount: Boolean,
+    defaultCurrencySymbol: String,
+    siteWideMinWithdrawal: Number,
+});
+
+const NotificationSchema = new mongoose.Schema({
+    userId: { type: Number, required: true, index: true },
+    message: String,
+    date: String,
+    read: { type: Boolean, default: false },
+});
+
+
+// --- Mongoose Models ---
+export const User = mongoose.model('User', UserSchema);
+export const Deposit = mongoose.model('Deposit', DepositSchema);
+export const Withdrawal = mongoose.model('Withdrawal', WithdrawalSchema);
+export const Transfer = mongoose.model('Transfer', TransferSchema);
+export const PaymentMethod = mongoose.model('PaymentMethod', PaymentMethodSchema);
+export const InvestmentPlan = mongoose.model('InvestmentPlan', InvestmentPlanSchema);
+export const Transaction = mongoose.model('Transaction', TransactionSchema);
+export const Rule = mongoose.model('Rule', RuleSchema);
+export const Settings = mongoose.model('Settings', SettingsSchema);
+export const Notification = mongoose.model('Notification', NotificationSchema);
+
+
+// --- Database Connection ---
+export const connectDB = async () => {
+    try {
+        const conn = await mongoose.connect(process.env.MONGODB_URI);
+        console.log(`MongoDB Connected: ${conn.connection.host}`);
+        await seedDatabase();
+    } catch (error) {
+        console.error(`Error connecting to MongoDB: ${error.message}`);
+        process.exit(1);
+    }
+};
+
+// --- Data Seeding ---
+// This function will populate the database with initial data if it's empty.
+const seedDatabase = async () => {
+    try {
+        const userCount = await User.countDocuments();
+        if (userCount > 0) {
+            console.log('Database already seeded.');
+            return;
+        }
+
+        console.log('Database is empty. Seeding initial data...');
+        
+        // Use the same mock data structure as before
+        const defaultData = getMockData();
+
+        // Need to manually handle IDs for relationships
+        await User.insertMany(defaultData.users.map(u => ({...u, _id: u.id})));
+        await Deposit.insertMany(defaultData.deposits.map(d => ({...d, depositId: d.id, _id: d.id})));
+        await Withdrawal.insertMany(defaultData.withdrawals.map(w => ({...w, withdrawalId: w.id, _id: w.id})));
+        await PaymentMethod.insertMany(defaultData.paymentMethods.map(p => ({...p, _id: p.id})));
+        await InvestmentPlan.insertMany(defaultData.investmentPlans.map(p => ({...p, _id: p.id})));
+        await Transfer.insertMany(defaultData.transfers.map(t => ({...t, transferId: t.id, _id: t.id})));
+        await Transaction.insertMany(defaultData.transactions.map(t => ({...t, transactionId: t.id, _id: t.id})));
+        await Rule.insertMany(defaultData.rules.map(r => ({...r, _id: r.id})));
+        await Notification.insertMany(defaultData.notifications.map(n => ({...n, _id: n.id})));
+        await Settings.create(defaultData.settings);
+
+        console.log('Database seeded successfully.');
+
+    } catch (error) {
+        console.error('Error seeding database:', error);
+    }
+};
+
+
+const getMockData = () => ({
     users: [
       { id: 1, username: 'john.doe', fullName: 'John Doe', email: 'john.doe@example.com', phone: '123-456-7890', whatsapp: '1234567890', country: 'USA', walletBalance: 221.00, heldBalance: 0, activePlans: ['Gold Plan', 'Bronze Plan'], registrationDate: '2023-10-26', status: 'Active', sponsor: 'admin' },
       { id: 2, username: 'jane.smith', fullName: 'Jane Smith', email: 'jane.smith@example.com', phone: '234-567-8901', whatsapp: '2345678901', country: 'Canada', walletBalance: 50.00, heldBalance: 15.00, activePlans: ['Silver Plan'], registrationDate: '2023-10-25', status: 'Active', sponsor: 'john.doe' },
@@ -65,9 +263,4 @@ const defaultData = {
         defaultCurrencySymbol: '$',
         siteWideMinWithdrawal: 10,
     },
-};
-
-// Create a new file-based database
-const db = await JSONFilePreset('server/db.json', defaultData);
-
-export default db;
+});
