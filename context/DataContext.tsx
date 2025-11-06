@@ -101,9 +101,9 @@ export const DataContext = createContext<{ state: AppState; actions: ApiActions 
     actions: {} as ApiActions,
 });
 
-// FIX: Default API_BASE_URL to localhost for easier local development.
-// FIX: Cast `import.meta` to `any` to bypass TypeScript error for `import.meta.env` when Vite types are not available.
-const API_BASE_URL = (import.meta as any).env?.byteapiurl || 'https://smtbackend.onrender.com/api';
+// The API base URL. It uses an environment variable for production 
+// and falls back to a local server for development.
+const API_BASE_URL = (import.meta as any).env?.byteapiurl || 'http://localhost:3001/api';
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(dataReducer, initialState);
