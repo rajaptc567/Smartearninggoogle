@@ -1,7 +1,10 @@
-
-
-
-
+// FIX: Define ImportMeta to provide types for import.meta.env, resolving errors
+// where Vite's client types are not automatically picked up by TypeScript.
+interface ImportMeta {
+    readonly env: {
+        readonly VITE_API_BASE_URL?: string;
+    };
+}
 
 // FIX: Import `useMemo` from React to fix "Cannot find name 'useMemo'" error.
 import React, { createContext, useReducer, ReactNode, useEffect, useCallback, useMemo } from 'react';
@@ -105,12 +108,9 @@ export const DataContext = createContext<{ state: AppState; actions: ApiActions 
     actions: {} as ApiActions,
 });
 
-// The API base URL. It uses an environment variable for production 
-// and falls back to a relative path for development, which will be handled by Vite's proxy.
-// FIX: Correctly construct the base URL to include the `/api` path prefix,
-// which resolves 404 errors in deployed environments.
-const API_HOST = (import.meta as any).env?.byteapiurl || '';
-const API_BASE_URL = `${API_HOST}/api`;
+// The API base URL. It uses a Vite environment variable for production 
+// and falls back to a relative path for local development (handled by Vite's proxy).
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(dataReducer, initialState);
