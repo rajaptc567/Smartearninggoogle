@@ -1,16 +1,8 @@
+/// <reference types="vite/client" />
+
 // FIX: Import `useMemo` from React to fix "Cannot find name 'useMemo'" error.
 import React, { createContext, useReducer, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Rule, Transfer, Settings, Notification } from '../types';
-
-// FIX: The /// <reference types="vite/client" /> directive was causing a resolution error. 
-// It has been removed and replaced with an explicit global declaration for import.meta.env to fix related typing issues.
-declare global {
-  interface ImportMeta {
-    readonly env: {
-      readonly VITE_API_BASE_URL?: string;
-    }
-  }
-}
 
 interface AppState {
     users: User[];
@@ -112,7 +104,7 @@ export const DataContext = createContext<{ state: AppState; actions: ApiActions 
 
 // The API base URL. It uses a Vite environment variable for production
 // and falls back to a hosted Render backend.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smartearning-backend.onrender.com/api';
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://smartearning-backend.onrender.com/api';
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(dataReducer, initialState);
