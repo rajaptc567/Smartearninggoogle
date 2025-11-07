@@ -1,4 +1,6 @@
 
+
+
 // FIX: Import `useMemo` from React to fix "Cannot find name 'useMemo'" error.
 import React, { createContext, useReducer, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Rule, Transfer, Settings, Notification } from '../types';
@@ -102,8 +104,8 @@ export const DataContext = createContext<{ state: AppState; actions: ApiActions 
 });
 
 // The API base URL. It uses an environment variable for production 
-// and falls back to a local server for development.
-const API_BASE_URL = (import.meta as any).env?.byteapiurl || 'http://localhost:3001/api';
+// and falls back to a relative path for development, which will be handled by Vite's proxy.
+const API_BASE_URL = (import.meta as any).env?.byteapiurl || '/api';
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(dataReducer, initialState);
