@@ -7,13 +7,15 @@ import { getAuth } from "firebase/auth";
 // 1. Create a project at https://console.firebase.google.com/
 // 2. In your project settings, find your web app's configuration.
 // 3. Copy the config object and paste its values here.
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // PASTE YOURS HERE
-  authDomain: "YOUR_AUTH_DOMAIN", // PASTE YOURS HERE
-  projectId: "YOUR_PROJECT_ID", // PASTE YOURS HERE
-  storageBucket: "YOUR_STORAGE_BUCKET", // PASTE YOURS HERE
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // PASTE YOURS HERE
-  appId: "YOUR_APP_ID" // PASTE YOURS HERE
+  apiKey: "AIzaSyA9Epue5MGtFuQlNT6GsTINgPW31UABMXM",
+  authDomain: "smartearning-a450d.firebaseapp.com",
+  databaseURL: "https://smartearning-a450d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "smartearning-a450d",
+  storageBucket: "smartearning-a450d.appspot.com",
+  messagingSenderId: "116141221051",
+  appId: "1:116141221051:web:d8f6c2bc7594942d11f59e"
 };
 
 // Initialize Firebase
