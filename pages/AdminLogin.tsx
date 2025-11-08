@@ -1,14 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
+import { auth } from '../firebase/config';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+
+const ADMIN_EMAIL = 'admin@example.com'; // Hardcoded admin email
 
 const AdminLogin: React.FC = () => {
     const navigate = useNavigate();
+    const [email, setEmail] = useState(ADMIN_EMAIL);
+    const [password, setPassword] = useState('adminpass');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, you'd have authentication logic here.
-        navigate('/admin');
+        setError('');
+        setIsLoading(true);
+
+        if (email.toLowerCase() !== ADMIN_EMAIL) {
+            setError('Invalid administrator email.');
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            navigate('/admin');
+        } catch (err: any) {
+            setError('Failed to sign in. Please check your admin credentials.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -21,13 +44,14 @@ const AdminLogin: React.FC = () => {
                 </div>
                 <form className="space-y-6" onSubmit={handleLogin}>
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Admin Username</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Admin Email</label>
                         <input
-                            id="username"
-                            name="username"
-                            type="text"
+                            id="email"
+                            name="email"
+                            type="email"
                             required
-                            defaultValue="admin"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                     </div>
@@ -38,13 +62,15 @@ const AdminLogin: React.FC = () => {
                             name="password"
                             type="password"
                             required
-                            defaultValue="adminpass"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                     </div>
+                    {error && <p className="text-sm text-red-500">{error}</p>}
                     <div>
-                        <Button type="submit" size="lg" className="w-full">
-                            Sign In
+                        <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+                             {isLoading ? 'Signing In...' : 'Sign In'}
                         </Button>
                     </div>
                 </form>

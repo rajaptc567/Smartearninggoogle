@@ -1,15 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
+import { auth } from '../firebase/config';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
+    const [email, setEmail] = useState('john.doe@example.com');
+    const [password, setPassword] = useState('password123');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, you'd have authentication logic here.
-        // For this demo, we'll just navigate to the member dashboard.
-        navigate('/member');
+        setError('');
+        setIsLoading(true);
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            // onAuthStateChanged in DataContext will handle navigation
+            navigate('/member');
+        } catch (err: any) {
+            setError(err.message || 'Failed to sign in. Please check your credentials.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -29,7 +44,8 @@ const Login: React.FC = () => {
                             type="email"
                             autoComplete="email"
                             required
-                            defaultValue="john.doe@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                     </div>
@@ -41,13 +57,15 @@ const Login: React.FC = () => {
                             type="password"
                             autoComplete="current-password"
                             required
-                            defaultValue="password123"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         />
                     </div>
+                    {error && <p className="text-sm text-red-500">{error}</p>}
                     <div>
-                        <Button type="submit" size="lg" className="w-full">
-                            Sign In
+                        <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+                            {isLoading ? 'Signing In...' : 'Sign In'}
                         </Button>
                     </div>
                 </form>
@@ -56,6 +74,9 @@ const Login: React.FC = () => {
                     <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
                         Sign up
                     </Link>
+                </p>
+                 <p className="text-xs text-center text-gray-500">
+                    <Link to="/secure-admin-login" className="hover:underline">Admin Login</Link>
                 </p>
             </div>
         </div>

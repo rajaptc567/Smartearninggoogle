@@ -10,7 +10,6 @@ import Modal from '../components/ui/Modal';
 
 const Users: React.FC = () => {
     const { state, actions } = useData();
-    // FIX: Changed 'isLoadingUsers' to 'isLoading' to match the property in AppState.
     const { users, settings, isLoading, error } = state;
     
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,8 +32,10 @@ const Users: React.FC = () => {
         if (editingUser) {
             await actions.updateUser(user as User);
         }
-        // FIX: Removed the 'else' block calling 'actions.addUser' as this action does not exist
-        // and adding users should be handled through the registration form.
+        // NOTE: Adding users should be done via the public registration form now
+        // else {
+        //     await actions.addUser(newUser);
+        // }
         handleCloseModal();
     };
 
@@ -49,7 +50,7 @@ const Users: React.FC = () => {
             user.username.toLowerCase().includes(term) ||
             user.fullName.toLowerCase().includes(term) ||
             user.email.toLowerCase().includes(term) ||
-            user.phone.includes(term) ||
+            (user.phone && user.phone.includes(term)) ||
             user.id.toString().includes(term)
         );
     }), [users, searchTerm]);
@@ -70,11 +71,6 @@ const Users: React.FC = () => {
         return (
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
                 <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Loading Members...</h2>
-                <p className="text-gray-500 mt-2">
-                    Connecting to the backend server...
-                    <br />
-                    <span className="text-xs">(Free services may take up to 50 seconds to start initially)</span>
-                </p>
                  <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto mt-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -95,7 +91,6 @@ const Users: React.FC = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="block w-full sm:w-64 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
-                    {/* FIX: Removed the "Add User" button as the functionality is not implemented in ApiActions. */}
                 </div>
             </div>
              <Table headers={tableHeaders}>
@@ -132,7 +127,7 @@ const Users: React.FC = () => {
                 ) : (
                     <tr>
                         <td colSpan={tableHeaders.length} className="text-center px-4 py-8 text-gray-500 dark:text-gray-400">
-                           {searchTerm ? 'No users match your search criteria.' : 'No users found. This could be because the backend server is not running or the database is empty.'}
+                           {searchTerm ? 'No users match your search criteria.' : 'No users found.'}
                         </td>
                     </tr>
                 )}
@@ -190,7 +185,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ user, mode, onClose, onSa
                     </div>
                     <div>
                         <label htmlFor="username" className="block text-sm font-medium">Username</label>
-                        <input type="text" name="username" value={formData.username || ''} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+                        <input type="text" name="username" value={formData.username || ''} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required disabled={!!user} />
                     </div>
                      <div>
                         <label htmlFor="email" className="block text-sm font-medium">Email</label>
@@ -267,7 +262,7 @@ const UserDetailsModal: React.FC<{ user: User; onClose: () => void; onSwitchToEd
                     ))}
                 </tbody>
             </table>
-             {data.length === 0 && <p className="p-2 text-xs text-gray-500">No records found.</p>}
+             {data.length === 0 && <p className="text-xs text-gray-500">No records found.</p>}
         </div>
     );
 
