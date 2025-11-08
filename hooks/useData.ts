@@ -1,5 +1,6 @@
 import { useContext } from 'react';
-import { DataContext } from '../context/DataContext';
+// FIX: Corrected the import path for DataContext.
+import { DataContext } from './context/DataContext';
 
 export const useData = () => {
     const context = useContext(DataContext);

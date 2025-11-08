@@ -104,13 +104,13 @@ export const DataContext = createContext<{ state: AppState; actions: ApiActions 
 
 const generateId = (prefix: string) => `${prefix.toUpperCase()}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
 
-// FIX: Rewrote the generic arrow function as a standard function declaration.
-// This is more compatible with older tooling and can resolve strange parsing errors
-// related to the generic syntax in some environments.
 // Helper to fetch all documents from a collection and map IDs
 async function fetchCollection<T>(collectionName: string): Promise<T[]> {
     const querySnapshot = await getDocs(collection(db, collectionName));
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as T);
+    // The spread operator after `id: doc.id` ensures that if the document's data
+    // already contains an `id` field (like the numeric ID for users), it will
+    // overwrite the default document ID, preserving the correct data structure.
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as T);
 }
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
