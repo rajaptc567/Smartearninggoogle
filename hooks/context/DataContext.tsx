@@ -1,5 +1,5 @@
 import React, { createContext, useReducer, ReactNode, useEffect, useCallback, useMemo } from 'react';
-import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Rule, Transfer, Settings, Notification, Status } from '../types';
+import { User, Deposit, Withdrawal, PaymentMethod, InvestmentPlan, Transaction, Rule, Transfer, Settings, Notification, Status } from '../../types';
 import { db, auth } from '../firebase/config';
 import { 
     collection, getDocs, doc, setDoc, updateDoc, addDoc, deleteDoc, runTransaction, query, where, documentId, writeBatch, getDoc
