@@ -1,5 +1,5 @@
-import React from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import React, { ReactNode } from 'react';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
@@ -30,6 +30,29 @@ import Transactions from './pages/user/Transactions';
 import Referrals from './pages/user/Referrals';
 import Profile from './pages/user/Profile';
 import TransferFunds from './pages/user/TransferFunds';
+import { useData } from './hooks/useData';
+
+const ADMIN_EMAIL = 'admin@example.com';
+
+const ProtectedRoute: React.FC<{ children: ReactNode, adminOnly?: boolean }> = ({ children, adminOnly = false }) => {
+    const { state } = useData();
+    const { firebaseUser, isLoading } = state;
+    const location = useLocation();
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-screen">Loading...</div>; // Or a spinner
+    }
+
+    if (!firebaseUser) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    if (adminOnly && firebaseUser.email !== ADMIN_EMAIL) {
+        return <Navigate to="/member" replace />;
+    }
+
+    return <>{children}</>;
+};
 
 
 const App: React.FC = () => {
@@ -43,7 +66,7 @@ const App: React.FC = () => {
         <Route path="/secure-admin-login" element={<AdminLogin />} />
 
         {/* Admin Panel Routes */}
-        <Route path="/admin" element={<Layout />}>
+        <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Layout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="users" element={<Users />} />
           <Route path="deposits" element={<Deposits />} />
@@ -59,7 +82,7 @@ const App: React.FC = () => {
         </Route>
 
         {/* User Member Area Routes */}
-        <Route path="/member" element={<UserLayout />}>
+        <Route path="/member" element={<ProtectedRoute><UserLayout /></ProtectedRoute>}>
           <Route index element={<UserDashboard />} />
           <Route path="deposit" element={<DepositFunds />} />
           <Route path="withdraw" element={<WithdrawFunds />} />
