@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-// FIX: Corrected the import path for DataProvider.
 import { DataProvider } from './hooks/context/DataContext';
 import './index.css';
 
