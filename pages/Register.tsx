@@ -29,13 +29,16 @@ const Register: React.FC = () => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
+        const trimmedSponsor = formData.sponsor.trim();
 
         try {
-            // Check if sponsor exists
-            const sponsorQuery = query(collection(db, 'users'), where('username', '==', formData.sponsor));
-            const sponsorSnapshot = await getDocs(sponsorQuery);
-            if (sponsorSnapshot.empty) {
-                 throw new Error(`Sponsor with username "${formData.sponsor}" not found.`);
+            // Check if sponsor exists, but only if one was entered
+            if (trimmedSponsor) {
+                const sponsorQuery = query(collection(db, 'users'), where('username', '==', trimmedSponsor));
+                const sponsorSnapshot = await getDocs(sponsorQuery);
+                if (sponsorSnapshot.empty) {
+                     throw new Error(`Sponsor with username "${formData.sponsor}" not found.`);
+                }
             }
 
             const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
@@ -57,7 +60,7 @@ const Register: React.FC = () => {
                 phone: formData.phone,
                 whatsapp: formData.whatsapp,
                 country: formData.country,
-                sponsor: formData.sponsor,
+                sponsor: trimmedSponsor,
                 walletBalance: 0,
                 heldBalance: 0,
                 activePlans: [],
@@ -113,8 +116,8 @@ const Register: React.FC = () => {
                         <input id="country" name="country" type="text" onChange={handleChange} className="w-full px-3 py-2 mt-1 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                     </div>
                      <div>
-                        <label htmlFor="sponsor"  className="block text-sm font-medium text-gray-700 dark:text-gray-300">Sponsor Username</label>
-                        <input id="sponsor" name="sponsor" type="text" required onChange={handleChange} className="w-full px-3 py-2 mt-1 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                        <label htmlFor="sponsor"  className="block text-sm font-medium text-gray-700 dark:text-gray-300">Sponsor Username (Optional)</label>
+                        <input id="sponsor" name="sponsor" type="text" onChange={handleChange} className="w-full px-3 py-2 mt-1 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                     </div>
                     <div>
                         <label htmlFor="password"  className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
