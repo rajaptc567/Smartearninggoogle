@@ -35,7 +35,7 @@ export interface ApiActions {
     deletePaymentMethod: (methodId: number) => Promise<void>;
     addInvestmentPlan: (plan: Partial<InvestmentPlan>) => Promise<void>;
     updateInvestmentPlan: (plan: InvestmentPlan) => Promise<void>;
-    deleteInvestmentPlan: (planIdplanIdplanId: number) => Promise<void>;
+    deleteInvestmentPlan: (planId: number) => Promise<void>;
     purchasePlan: (payload: { userId: number; planId: number }) => Promise<void>;
     addRule: (rule: Partial<Rule>) => Promise<void>;
     deleteRule: (ruleId: number) => Promise<void>;

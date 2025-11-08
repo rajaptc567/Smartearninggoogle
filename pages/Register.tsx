@@ -30,8 +30,25 @@ const Register: React.FC = () => {
         setError('');
         setIsLoading(true);
         const trimmedSponsor = formData.sponsor.trim();
+        const trimmedUsername = formData.username.trim().toLowerCase();
+        const trimmedEmail = formData.email.trim().toLowerCase();
+
 
         try {
+            // Check if username is already taken
+            const usernameQuery = query(collection(db, 'users'), where('username', '==', trimmedUsername));
+            const usernameSnapshot = await getDocs(usernameQuery);
+            if (!usernameSnapshot.empty) {
+                throw new Error(`Username "${formData.username}" is already taken. Please choose another.`);
+            }
+
+            // Check if email is already registered in our user collection
+            const emailQuery = query(collection(db, 'users'), where('email', '==', trimmedEmail));
+            const emailSnapshot = await getDocs(emailQuery);
+            if (!emailSnapshot.empty) {
+                throw new Error(`Email "${formData.email}" is already registered. Please log in or use a different email.`);
+            }
+
             // Check if sponsor exists, but only if one was entered
             if (trimmedSponsor) {
                 const sponsorQuery = query(collection(db, 'users'), where('username', '==', trimmedSponsor));
@@ -54,9 +71,9 @@ const Register: React.FC = () => {
             await setDoc(doc(db, "users", user.uid), {
                 id: maxId + 1, // Keep numeric ID for compatibility if needed
                 uid: user.uid,
-                username: formData.username.toLowerCase(),
+                username: trimmedUsername,
                 fullName: formData.fullName,
-                email: formData.email,
+                email: trimmedEmail,
                 phone: formData.phone,
                 whatsapp: formData.whatsapp,
                 country: formData.country,
