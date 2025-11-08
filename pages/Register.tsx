@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { auth, db } from '../firebase/config';
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc, serverTimestamp, getDocs, collection, query, where } from "firebase/firestore";
+import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
 import { Status } from '../types';
 
 const Register: React.FC = () => {
